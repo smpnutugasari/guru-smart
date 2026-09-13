@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GURU SMART - Sistem Manajemen Sekolah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: ['Inter', 'sans-serif'],
+                    colors: {
+                        primary: { 50:'#eff6ff', 100:'#dbeafe', 500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 900:'#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 5px; }
+        .modal-scroll::-webkit-scrollbar { width: 5px; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 5px; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Print Styles */
+        #printArea { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            @page { margin: 1cm; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-600 to-blue-900">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
+                    <svg class="w-12 h-12 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
+                </div>
+                <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white">GURU SMART</h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">Solusi Digital Lengkap untuk Administrasi dan Pembelajaran Guru</p>
+            </div>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Username</label>
+                    <input type="text" id="loginUsername" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors">Masuk</button>
+            </form>
+            <div class="mt-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-xs text-slate-600 dark:text-slate-300">
+                <p class="font-bold mb-2">Akun Demo (Klik Reset Data di bawah dulu):</p>
+                <p>Admin: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">admin</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">admin123</span></p>
+                <p>Guru: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">guru</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">guru123</span></p>
+                <p>Siswa: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">siswa</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">siswa123</span></p>
+                <button id="seedDataBtn" class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white py-1.5 rounded text-xs">Reset & Seed Data Demo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appScreen" class="hidden h-screen flex overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar fixed lg:relative z-40 w-64 h-full bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto">
+            <div class="p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+                <div class="flex items-center space-x-2">
+                    <div class="p-2 bg-blue-600 rounded-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-800 dark:text-white text-lg leading-tight">GURU SMART</h1>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <nav id="navMenu" class="p-4 space-y-1 text-sm"></nav>
+        </aside>
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/50 z-30"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Topbar -->
+            <header class="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 lg:px-6">
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-slate-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+                    <h2 id="pageTitle" class="text-xl font-semibold text-slate-800 dark:text-white">Dashboard</h2>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleDarkMode()" class="text-slate-500 hover:text-blue-600">
+                        <svg id="iconSun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg id="iconMoon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                    <div class="relative">
+                        <button class="text-slate-500 hover:text-blue-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm" id="userAvatar">A</div>
+                        <div class="hidden md:block">
+                            <p id="userName" class="text-sm font-medium text-slate-800 dark:text-white">Admin</p>
+                            <p id="userRole" class="text-xs text-slate-500 dark:text-slate-400 capitalize">Administrator</p>
+                        </div>
+                        <button onclick="logout()" class="text-red-500 hover:text-red-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div id="content" class="flex-1 overflow-y-auto p-4 lg:p-6 bg-slate-100 dark:bg-slate-900"></div>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-lg font-semibold text-slate-800 dark:text-white">Modal Title</h3>
+                <button onclick="closeModal()" class="text-slate-500 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div id="modalContent" class="modal-scroll p-6 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden fixed bottom-5 right-5 z-[60] bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2"></div>
+    
+    <!-- Print Area (Hidden, for generating Rapor) -->
+    <div id="printArea"></div>
+
+<script>
+// =================================================================
+// 1. CORE SYSTEM & DATABASE (LocalStorage)
+// =================================================================
+const DB = {
+    get: (key) => JSON.parse(localStorage.getItem(`gs_${key}`)) || [],
+    set: (key, data) => localStorage.setItem(`gs_${key}`, JSON.stringify(data)),
+    delete: (key) => localStorage.removeItem(`gs_${key}`)
+};
+
+let currentUser = null;
+let currentPage = 'dashboard';
+
+// =================================================================
+// 2. SEED DATA (Awal Aplikasi)
+// =================================================================
+function seedData() {
+    localStorage.clear();
+    
+    DB.set('users', [
+        { id: 1, username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
+        { id: 2, username: 'guru', password: 'guru123', role: 'guru', name: 'Budi Santoso, S.Pd.' },
+        { id: 3, username: 'siswa', password: 'siswa123', role: 'siswa', name: 'Andi Pratama' }
+    ]);
+
+    DB.set('school_profile', {
+        name: 'SMK Negeri 1 Maju Jaya',
+        address: 'Jl. Pendidikan No. 123, Jakarta',
+        phone: '021-5550123',
+        principal: 'Drs. H. Sutrisno, M.M.',
+        principalNip: '196505121990031005',
+        year: '2024/2025',
+        semester: 'Ganjil'
+    });
+
+    DB.set('classes', [
+        { id: 1, name: 'X RPL 1', level: '10', homeroom: 'Budi Santoso, S.Pd.' },
+        { id: 2, name: 'X RPL 2', level: '10', homeroom: 'Siti Aminah, S.Pd.' }
+    ]);
+
+    DB.set('subjects', [
+        { id: 1, code: 'RPL01', name: 'Pemrograman Web', teacher: 'Budi Santoso, S.Pd.', kkm: 75 },
+        { id: 2, code: 'MAT01', name: 'Matematika', teacher: 'Slamet Riyadi, S.Pd.', kkm: 70 }
+    ]);
+
+    DB.set('students', [
+        { id: 1, nis: '1001', nisn: '0091234567', name: 'Andi Pratama', gender: 'L', classId: 1, address: 'Jl. Mawar', parent: 'Bambang', phone: '08123456789' },
+        { id: 2, nis: '1002', nisn: '0091234568', name: 'Citra Lestari', gender: 'P', classId: 1, address: 'Jl. Melati', parent: 'Sutrisno', phone: '08123456780' },
+        { id: 3, nis: '1003', nisn: '0091234569', name: 'Dimas Anggara', gender: 'L', classId: 2, address: 'Jl. Anggrek', parent: 'Hadi', phone: '08123456781' }
+    ]);
+
+    DB.set('teachers', [
+        { id: 1, nip: '198001012005011001', name: 'Budi Santoso, S.Pd.', gender: 'L', subject: 'Pemrograman Web', phone: '0812345001' },
+        { id: 2, nip: '198505052008012003', name: 'Siti Aminah, S.Pd.', gender: 'P', subject: 'Basis Data', phone: '0812345002' }
+    ]);
+
+    DB.set('schedules', [
+        { id: 1, day: 'Senin', startTime: '07:30', endTime: '09:00', classId: 1, subject: 'Pemrograman Web', teacher: 'Budi Santoso, S.Pd.', room: 'Lab 1' },
+        { id: 2, day: 'Senin', startTime: '09:15', endTime: '10:45', classId: 1, subject: 'Matematika', teacher: 'Slamet Riyadi, S.Pd.', room: 'Kelas 1' },
+        { id: 3, day: 'Selasa', startTime: '07:30', endTime: '09:00', classId: 1, subject: 'Basis Data', teacher: 'Siti Aminah, S.Pd.', room: 'Lab 2' }
+    ]);
+
+    DB.set('grades', [
+        { id: 1, studentId: 1, subjectId: 1, type: 'Tugas', score: 85 },
+        { id: 2, studentId: 1, subjectId: 1, type: 'Ulangan Harian', score: 80 },
+        { id: 3, studentId: 2, subjectId: 1, type: 'Tugas', score: 90 }
+    ]);
+
+    DB.set('attendance', [
+        { id: 1, studentId: 1, date: '2024-07-15', status: 'Hadir', subject: 'Pemrograman Web' },
+        { id: 2, studentId: 2, date: '2024-07-15', status: 'Sakit', subject: 'Pemrograman Web' }
+    ]);
+
+    DB.set('assignments', [
+        { id: 1, title: 'Tugas HTML Dasar', subjectId: 1, classId: 1, deadline: '2024-08-30', description: 'Buat halaman profile dengan HTML', maxScore: 100, submissions: [] }
+    ]);
+
+    DB.set('materi', [
+        { id: 1, title: 'Pengenalan HTML', subjectId: 1, classId: 1, desc: 'Struktur dasar HTML untuk pemula', link: 'https://www.w3schools.com/html/' },
+        { id: 2, title: 'CSS Layouting', subjectId: 1, classId: 1, desc: 'Belajar Flexbox dan Grid', link: 'https://css-tricks.com/snippets/css/complete-guide-grid/' }
+    ]);
+
+    DB.set('keuangan', [
+        { id: 1, studentId: 1, month: 'Juli 2024', amount: 150000, status: 'Lunas' },
+        { id: 2, studentId: 2, month: 'Juli 2024', amount: 150000, status: 'Belum Bayar' },
+        { id: 3, studentId: 3, month: 'Juli 2024', amount: 150000, status: 'Lunas' }
+    ]);
+
+    DB.set('announcements', [
+        { id: 1, title: 'Selamat Datang!', content: 'Aplikasi GURU SMART resmi digunakan. Silakan fitur Rapor dan Keuangan sudah tersedia!', date: '2024-07-10', target: 'Semua' }
+    ]);
+
+    showToast('Data demo berhasil direset!', 'success');
+    setTimeout(() => location.reload(), 1000);
+}
+
+// =================================================================
+// 3. AUTHENTICATION
+// =================================================================
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    const users = DB.get('users');
+    
+    const user = users.find(u => u.username === username && u.password === password);
+    
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('gs_currentUser', JSON.stringify(user));
+        initApp();
+    } else {
+        showToast('Username atau password salah!', 'error');
+    }
+});
+
+function logout() {
+    localStorage.removeItem('gs_currentUser');
+    currentUser = null;
+    location.reload();
+}
+
+function checkSession() {
+    const session = localStorage.getItem('gs_currentUser');
+    if (session) {
+        currentUser = JSON.parse(session);
+        return true;
+    }
+    return false;
+}
+
+// =================================================================
+// 4. UI HELPERS
+// =================================================================
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    const bg = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800';
+    toast.className = `fixed bottom-5 right-5 z-[60] ${bg} text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 fade-in`;
+    toast.innerHTML = `<span>${message}</span>`;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    document.getElementById('iconSun').classList.toggle('hidden');
+    document.getElementById('iconMoon').classList.toggle('hidden');
+    localStorage.setItem('gs_darkMode', document.documentElement.classList.contains('dark'));
+    if(currentPage === 'dashboard') renderDashboard(); // Re-render chart to update color
+}
+
+if (localStorage.getItem('gs_darkMode') === 'true') {
+    document.documentElement.classList.add('dark');
+    document.getElementById('iconSun').classList.remove('hidden');
+    document.getElementById('iconMoon').classList.add('hidden');
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
+
+function openModal(title, contentHtml) {
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalContent').innerHTML = contentHtml;
+    document.getElementById('modalContainer').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('modalContainer').classList.add('hidden');
+}
+
+// =================================================================
+// 5. NAVIGATION & ROUTER
+// =================================================================
+const menus = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'ai', label: 'Asisten AI Guru', icon: 'M12 2a7 7 0 00-7 7v3a7 7 0 0014 0V9a7 7 0 00-7-7zm-4 18h8M9 22h6', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'teachers', label: 'Data Guru', icon: 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z', roles: ['admin'] },
+    { id: 'students', label: 'Data Siswa', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['admin', 'guru'] },
+    { id: 'classes', label: 'Kelas', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['admin'] },
+    { id: 'subjects', label: 'Mata Pelajaran', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'schedules', label: 'Jadwal', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'attendance', label: 'Absensi', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', roles: ['admin', 'guru'] },
+    { id: 'grades', label: 'Penilaian', icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'assignments', label: 'Tugas', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'materi', label: 'Materi Ajar', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'keuangan', label: 'Keuangan SPP', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1V6m0 2c-1.11 0-2.08.402-2.599 1M3 12h18M12 18v-1m0 1v-1', roles: ['admin'] },
+    { id: 'rapor', label: 'Cetak Rapor', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'announcements', label: 'Pengumuman', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'settings', label: 'Pengaturan', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', roles: ['admin', 'guru', 'siswa'] }
+];
+
+function renderMenu() {
+    const navMenu = document.getElementById('navMenu');
+    navMenu.innerHTML = '';
+    menus.filter(m => m.roles.includes(currentUser.role)).forEach(menu => {
+        const isActive = currentPage === menu.id ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700';
+        navMenu.innerHTML += `
+            <a href="#" onclick="navigate('${menu.id}')" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg ${isActive} transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${menu.icon}"></path></svg>
+                <span>${menu.label}</span>
+            </a>
+        `;
+    });
+}
+
+function navigate(page) {
+    currentPage = page;
+    document.getElementById('pageTitle').innerText = menus.find(m => m.id === page)?.label || 'Page';
+    renderMenu();
+    renderContent(page);
+    if (window.innerWidth < 1024) toggleSidebar();
+}
+
+// =================================================================
+// 6. PAGE RENDERING & LOGIC
+// =================================================================
+
+function renderContent(page) {
+    const content = document.getElementById('content');
+    content.innerHTML = ''; // Clear
+    
+    switch(page) {
+        case 'dashboard': renderDashboard(); break;
+        case 'ai': renderAI(); break;
+        case 'teachers': renderTeachers(); break;
+        case 'students': renderStudents(); break;
+        case 'classes': renderClasses(); break;
+        case 'subjects': renderSubjects(); break;
+        case 'schedules': renderSchedules(); break;
+        case 'attendance': renderAttendance(); break;
+        case 'grades': renderGrades(); break;
+        case 'assignments': renderAssignments(); break;
+        case 'materi': renderMateri(); break;
+        case 'keuangan': renderKeuangan(); break;
+        case 'rapor': renderRapor(); break;
+        case 'announcements': renderAnnouncements(); break;
+        case 'settings': renderSettings(); break;
+        default: content.innerHTML = '<h1>404 Not Found</h1>';
+    }
+}
+
+// --- DASHBOARD ---
+function renderDashboard() {
+    const students = DB.get('students');
+    const teachers = DB.get('teachers');
+    const classes = DB.get('classes');
+    const announcements = DB.get('announcements');
+    const grades = DB.get('grades');
+    const keuangan = DB.get('keuangan');
+
+    const avgScore = grades.length ? (grades.reduce((s, g) => s + g.score, 0) / grades.length).toFixed(1) : 0;
+    const unpaidSpp = keuangan.filter(k => k.status === 'Belum Bayar').length;
+
+    document.getElementById('content').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            ${dashboardCard('Total Siswa', students.length, 'bg-blue-500', 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z')}
+            ${dashboardCard('Total Guru', teachers.length, 'bg-green-500', 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z')}
+            ${dashboardCard('Total Kelas', classes.length, 'bg-yellow-500', 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4')}
+            ${dashboardCard('SPP Belum Lunas', unpaidSpp, 'bg-red-500', 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1V6m0 2c-1.11 0-2.08.402-2.599 1')}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Statistik Nilai Siswa</h3>
+                <canvas id="chartGrades" height="100"></canvas>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Pengumuman Terbaru</h3>
+                <div class="space-y-4 max-h-80 overflow-y-auto modal-scroll">
+                    ${announcements.map(a => `
+                        <div class="p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                            <p class="font-medium text-sm text-blue-600 dark:text-blue-400">${a.title}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-300 mt-1">${a.content}</p>
+                            <p class="text-[10px] text-slate-400 mt-1">${a.date}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Render Chart Dinamis berdasarkan data grades
+    const ctx = document.getElementById('chartGrades').getContext('2d');
+    const types = ['Tugas', 'Ulangan Harian', 'PTS', 'PAS'];
+    const data = types.map(t => {
+        const tGrades = grades.filter(g => g.type === t);
+        return tGrades.length ? (tGrades.reduce((s, g) => s + g.score, 0) / tGrades.length).toFixed(1) : 0;
+    });
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: types,
+            datasets: [{
+                label: 'Rata-rata Nilai',
+                data: data,
+                backgroundColor: 'rgba(37, 99, 235, 0.5)',
+                borderColor: 'rgba(37, 99, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: { 
+            responsive: true,
+            scales: { y: { beginAtZero: 0, max: 100 } },
+            plugins: { legend: { labels: { color: document.documentElement.classList.contains('dark') ? '#fff' : '#000' } } }
+        }
+    });
+}
+
+function dashboardCard(title, count, color, icon) {
+    return `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm flex items-center space-x-4">
+            <div class="p-3 ${color} rounded-lg text-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icon}"></path></svg>
+            </div>
+            <div>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">${title}</p>
+                <h3 class="text-2xl font-bold text-slate-800 dark:text-white">${count}</h3>
+            </div>
+        </div>
+    `;
+}
+
+// --- TEACHERS ---
+function renderTeachers() {
+    const teachers = DB.get('teachers');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <input type="text" id="searchTeacher" onkeyup="filterTable('searchTeacher', 'teacherTableBody')" placeholder="Cari guru..." class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="teacherForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Guru
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3">NIP</th>
+                            <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Gender</th>
+                            <th class="px-4 py-3">Mapel</th>
+                            <th class="px-4 py-3">No HP</th>
+                            <th class="px-4 py-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                        ${teachers.map(t => `
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${t.nip}</td>
+                                <td class="px-4 py-3 font-medium text-slate-800 dark:text-white">${t.name}</td>
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${t.gender}</td>
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${t.subject}</td>
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${t.phone}</td>
+                                <td class="px-4 py-3 flex space-x-2">
+                                    <button onclick="teacherForm(${t.id})" class="text-blue-500 hover:text-blue-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                    <button onclick="deleteData('teachers', ${t.id}, renderTeachers)" class="text-red-500 hover:text-red-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function teacherForm(id = null) {
+    const teacher = id ? DB.get('teachers').find(t => t.id === id) : {};
+    openModal(id ? 'Edit Guru' : 'Tambah Guru', `
+        <form id="teacherForm" class="space-y-4">
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">NIP</label><input type="text" id="tNip" value="${teacher.nip || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Nama Lengkap</label><input type="text" id="tName" value="${teacher.name || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white" required></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Gender</label><select id="tGender" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"><option value="L" ${teacher.gender==='L'?'selected':''}>Laki-laki</option><option value="P" ${teacher.gender==='P'?'selected':''}>Perempuan</option></select></div>
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">No HP</label><input type="text" id="tPhone" value="${teacher.phone || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            </div>
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Mata Pelajaran</label><input type="text" id="tSubject" value="${teacher.subject || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('teacherForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(),
+            nip: tNip.value, name: tName.value, gender: tGender.value, phone: tPhone.value, subject: tSubject.value
+        };
+        saveData('teachers', data, id);
+        closeModal(); renderTeachers();
+    };
+}
+
+// --- STUDENTS --- (Same logic, just kept here)
+function renderStudents() {
+    const students = DB.get('students');
+    const classes = DB.get('classes');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                <div class="flex gap-2">
+                    <input type="text" id="searchStudent" onkeyup="filterTable('searchStudent', 'studentTableBody')" placeholder="Cari siswa..." class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filterClass" onchange="filterStudentClass()" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
+                        <option value="">Semua Kelas</option>
+                        ${classes.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">Export CSV</button>
+                    <button onclick="studentForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Siswa
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3">NIS</th>
+                            <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Kelas</th>
+                            <th class="px-4 py-3">Gender</th>
+                            <th class="px-4 py-3">Wali/Ortu</th>
+                            <th class="px-4 py-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                        ${students.map(s => {
+                            const cls = classes.find(c => c.id === s.classId);
+                            return `
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.nis}</td>
+                                    <td class="px-4 py-3 font-medium text-slate-800 dark:text-white">${s.name}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${cls?.name || 'N/A'}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.gender}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.parent}</td>
+                                    <td class="px-4 py-3 flex space-x-2">
+                                        <button onclick="studentForm(${s.id})" class="text-blue-500 hover:text-blue-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                        <button onclick="deleteData('students', ${s.id}, renderStudents)" class="text-red-500 hover:text-red-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function studentForm(id = null) {
+    const student = id ? DB.get('students').find(s => s.id === id) : {};
+    const classes = DB.get('classes');
+    openModal(id ? 'Edit Siswa' : 'Tambah Siswa', `
+        <form id="studentForm" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">NIS</label><input type="text" id="sNis" value="${student.nis || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white" required></div>
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">NISN</label><input type="text" id="sNisn" value="${student.nisn || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            </div>
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Nama Lengkap</label><input type="text" id="sName" value="${student.name || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white" required></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Gender</label><select id="sGender" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"><option value="L" ${student.gender==='L'?'selected':''}>Laki-laki</option><option value="P" ${student.gender==='P'?'selected':''}>Perempuan</option></select></div>
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Kelas</label><select id="sClass" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white">${classes.map(c => `<option value="${c.id}" ${student.classId==c.id?'selected':''}>${c.name}</option>`).join('')}</select></div>
+            </div>
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Alamat</label><input type="text" id="sAddress" value="${student.address || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Nama Wali</label><input type="text" id="sParent" value="${student.parent || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+                <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">No HP Wali</label><input type="text" id="sPhone" value="${student.phone || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('studentForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(),
+            nis: sNis.value, nisn: sNisn.value, name: sName.value, gender: sGender.value,
+            classId: parseInt(sClass.value), address: sAddress.value, parent: sParent.value, phone: sPhone.value
+        };
+        saveData('students', data, id);
+        closeModal(); renderStudents();
+    };
+}
+
+function filterStudentClass() {
+    const filter = document.getElementById('filterClass').value;
+    const rows = document.getElementById('studentTableBody').getElementsByTagName('tr');
+    for (let row of rows) {
+        row.style.display = row.cells[2].innerText.includes(filter) ? '' : 'none';
+    }
+}
+
+// --- CLASSES, SUBJECTS, SCHEDULES, ATTENDANCE, GRADES, ASSIGNMENTS, ANNOUNCEMENTS ---
+// (Kept exactly the same to save space, ensure you don't overwrite them if copying specific blocks)
+
+function renderClasses() {
+    const classes = DB.get('classes');
+    const students = DB.get('students');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Manajemen Kelas</h3>
+                <button onclick="classForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Tambah Kelas</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${classes.map(c => {
+                    const count = students.filter(s => s.classId === c.id).length;
+                    return `
+                        <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-md transition-shadow">
+                            <h4 class="text-lg font-bold text-slate-800 dark:text-white">${c.name}</h4>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Wali: ${c.homeroom}</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Jumlah Siswa: ${count}</p>
+                            <div class="mt-4 flex space-x-2">
+                                <button onclick="classForm(${c.id})" class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded">Edit</button>
+                                <button onclick="deleteData('classes', ${c.id}, renderClasses)" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded">Hapus</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function classForm(id = null) {
+    const cls = id ? DB.get('classes').find(c => c.id === id) : {};
+    openModal(id ? 'Edit Kelas' : 'Tambah Kelas', `
+        <form id="classForm" class="space-y-4">
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Nama Kelas</label><input type="text" id="cName" value="${cls.name || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Tingkat</label><input type="text" id="cLevel" value="${cls.level || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            <div><label class="block text-sm mb-1 text-slate-600 dark:text-slate-300">Wali Kelas</label><input type="text" id="cHomeroom" value="${cls.homeroom || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('classForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = { id: id || Date.now(), name: cName.value, level: cLevel.value, homeroom: cHomeroom.value };
+        saveData('classes', data, id);
+        closeModal(); renderClasses();
+    };
+}
+
+function renderSubjects() {
+    const subjects = DB.get('subjects');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Mata Pelajaran</h3>
+                <button onclick="subjectForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Tambah Mapel</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 uppercase text-xs">
+                        <tr><th class="px-4 py-3">Kode</th><th class="px-4 py-3">Nama Mapel</th><th class="px-4 py-3">Guru</th><th class="px-4 py-3">KKM</th><th class="px-4 py-3">Aksi</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                        ${subjects.map(s => `
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.code}</td>
+                                <td class="px-4 py-3 font-medium text-slate-800 dark:text-white">${s.name}</td>
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.teacher}</td>
+                                <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.kkm}</td>
+                                <td class="px-4 py-3 flex space-x-2">
+                                    <button onclick="subjectForm(${s.id})" class="text-blue-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                    <button onclick="deleteData('subjects', ${s.id}, renderSubjects)" class="text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function subjectForm(id = null) {
+    const sub = id ? DB.get('subjects').find(s => s.id === id) : {};
+    openModal(id ? 'Edit Mapel' : 'Tambah Mapel', `
+        <form id="subjectForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Kode</label><input type="text" id="subCode" value="${sub.code || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Nama Mapel</label><input type="text" id="subName" value="${sub.name || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Guru Pengampu</label><input type="text" id="subTeacher" value="${sub.teacher || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+            <div><label class="block text-sm mb-1">KKM</label><input type="number" id="subKkm" value="${sub.kkm || 75}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('subjectForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = { id: id || Date.now(), code: subCode.value, name: subName.value, teacher: subTeacher.value, kkm: parseInt(subKkm.value) };
+        saveData('subjects', data, id);
+        closeModal(); renderSubjects();
+    };
+}
+
+function renderSchedules() {
+    const schedules = DB.get('schedules');
+    const classes = DB.get('classes');
+    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Jadwal Pelajaran</h3>
+                <button onclick="scheduleForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Tambah Jadwal</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50 dark:bg-slate-700">
+                        <tr>
+                            <th class="px-4 py-3 border">Jam</th>
+                            ${days.map(d => `<th class="px-4 py-3 border">${d}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${['07:30-09:00', '09:15-10:45', '11:00-12:30'].map(time => `
+                            <tr>
+                                <td class="px-4 py-3 border font-medium text-slate-700 dark:text-slate-300">${time}</td>
+                                ${days.map(day => {
+                                    const sch = schedules.find(s => s.day === day && s.startTime === time.split('-')[0]);
+                                    return `<td class="px-4 py-3 border text-slate-600 dark:text-slate-300 text-xs">${sch ? `${sch.subject}<br><span class="text-blue-500">${sch.teacher}</span>` : '-'}</td>`;
+                                }).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function scheduleForm(id = null) {
+    const sch = id ? DB.get('schedules').find(s => s.id === id) : {};
+    const classes = DB.get('classes');
+    openModal('Tambah Jadwal', `
+        <form id="scheduleForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Hari</label><select id="scDay" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option></select></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1">Jam Mulai</label><input type="text" id="scStart" value="07:30" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+                <div><label class="block text-sm mb-1">Jam Selesai</label><input type="text" id="scEnd" value="09:00" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+            </div>
+            <div><label class="block text-sm mb-1">Kelas</label><select id="scClass" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+            <div><label class="block text-sm mb-1">Mata Pelajaran</label><input type="text" id="scSubject" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" placeholder="Mapel"></div>
+            <div><label class="block text-sm mb-1">Guru</label><input type="text" id="scTeacher" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" placeholder="Nama Guru"></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('scheduleForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(), day: scDay.value, startTime: scStart.value, endTime: scEnd.value,
+            classId: parseInt(scClass.value), subject: scSubject.value, teacher: scTeacher.value
+        };
+        saveData('schedules', data, id);
+        closeModal(); renderSchedules();
+    };
+}
+
+function renderAttendance() {
+    const students = DB.get('students');
+    const classes = DB.get('classes');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4 items-center">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Input Absensi Siswa</h3>
+                <div class="flex gap-2">
+                    <select id="attClass" class="px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white text-sm">
+                        ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                    </select>
+                    <input type="date" id="attDate" class="px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white text-sm">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-xs uppercase">
+                        <tr><th class="px-4 py-3">Nama Siswa</th><th class="px-4 py-3">Status</th></tr>
+                    </thead>
+                    <tbody class="divide-y dark:divide-slate-700">
+                        ${students.map(s => `
+                            <tr>
+                                <td class="px-4 py-3 text-slate-800 dark:text-white">${s.name}</td>
+                                <td class="px-4 py-3">
+                                    <select id="att_${s.id}" class="px-2 py-1 border rounded dark:bg-slate-700 dark:text-white text-xs">
+                                        <option value="Hadir">Hadir</option>
+                                        <option value="Sakit">Sakit</option>
+                                        <option value="Izin">Izin</option>
+                                        <option value="Alpa">Alpa</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="saveAttendance()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Simpan Absensi</button>
+        </div>
+    `;
+}
+
+function saveAttendance() {
+    const students = DB.get('students');
+    const date = document.getElementById('attDate').value;
+    if(!date){ showToast('Pilih tanggal dulu!', 'error'); return; }
+    const subject = "Umum"; // Simplified
+    let attendances = DB.get('attendance');
+    
+    students.forEach(s => {
+        const status = document.getElementById(`att_${s.id}`).value;
+        const existing = attendances.find(a => a.studentId === s.id && a.date === date);
+        if (existing) {
+            existing.status = status;
+        } else {
+            attendances.push({ id: Date.now() + s.id, studentId: s.id, date, status, subject });
+        }
+    });
+    DB.set('attendance', attendances);
+    showToast('Absensi berhasil disimpan!', 'success');
+}
+
+function renderGrades() {
+    const students = DB.get('students');
+    const subjects = DB.get('subjects');
+    const grades = DB.get('grades');
+    
+    if(currentUser.role === 'siswa') {
+        const myGrades = grades.filter(g => g.studentId === currentUser.id);
+        document.getElementById('content').innerHTML = `
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Nilai Saya</h3>
+                <ul class="divide-y dark:divide-slate-700">
+                    ${myGrades.map(g => {
+                        const sub = subjects.find(s => s.id === g.subjectId);
+                        return `<li class="py-3 flex justify-between"><span class="text-slate-700 dark:text-slate-300">${sub?.name || 'N/A'} (${g.type})</span><span class="font-bold text-blue-600">${g.score}</span></li>`;
+                    }).join('')}
+                </ul>
+            </div>
+        `;
+        return;
+    }
+
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Input Nilai Massal</h3>
+                <button onclick="gradeForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Input Nilai</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-xs uppercase">
+                        <tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Mapel</th><th class="px-4 py-3">Tipe</th><th class="px-4 py-3">Nilai</th><th class="px-4 py-3">Aksi</th></tr>
+                    </thead>
+                    <tbody class="divide-y dark:divide-slate-700">
+                        ${grades.map(g => {
+                            const std = students.find(s => s.id === g.studentId);
+                            const sub = subjects.find(s => s.id === g.subjectId);
+                            return `
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-800 dark:text-white">${std?.name || 'N/A'}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${sub?.name || 'N/A'}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${g.type}</td>
+                                    <td class="px-4 py-3 font-medium text-blue-600">${g.score}</td>
+                                    <td class="px-4 py-3 flex gap-2">
+                                        <button onclick="gradeForm(${g.id})" class="text-blue-500 text-xs">Edit</button>
+                                        <button onclick="deleteData('grades', ${g.id}, renderGrades)" class="text-red-500 text-xs">Hapus</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function gradeForm(id = null) {
+    const gr = id ? DB.get('grades').find(g => g.id === id) : {};
+    const students = DB.get('students');
+    const subjects = DB.get('subjects');
+    openModal(id ? 'Edit Nilai' : 'Input Nilai', `
+        <form id="gradeForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Siswa</label><select id="gStudent" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${students.map(s => `<option value="${s.id}" ${gr.studentId==s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+            <div><label class="block text-sm mb-1">Mapel</label><select id="gSubject" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${subjects.map(s => `<option value="${s.id}" ${gr.subjectId==s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+            <div><label class="block text-sm mb-1">Tipe Nilai</label><select id="gType" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"><option>Tugas</option><option>Ulangan Harian</option><option>PTS</option><option>PAS</option></select></div>
+            <div><label class="block text-sm mb-1">Nilai (0-100)</label><input type="number" id="gScore" value="${gr.score || 0}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('gradeForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(),
+            studentId: parseInt(gStudent.value),
+            subjectId: parseInt(gSubject.value),
+            type: gType.value,
+            score: parseInt(gScore.value)
+        };
+        saveData('grades', data, id);
+        closeModal(); renderGrades();
+    };
+}
+
+function renderAssignments() {
+    const assignments = DB.get('assignments');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Daftar Tugas</h3>
+                ${currentUser.role !== 'siswa' ? `<button onclick="assignmentForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Buat Tugas</button>` : ''}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${assignments.map(a => `
+                    <div class="p-4 border dark:border-slate-700 rounded-lg">
+                        <h4 class="font-bold text-slate-800 dark:text-white">${a.title}</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deadline: ${a.deadline}</p>
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-2">${a.description}</p>
+                        ${currentUser.role !== 'siswa' ? `
+                            <div class="mt-3 flex gap-2">
+                                <button onclick="assignmentForm(${a.id})" class="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded">Edit</button>
+                                <button onclick="deleteData('assignments', ${a.id}, renderAssignments)" class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded">Hapus</button>
+                            </div>
+                        ` : `<button class="mt-3 text-xs bg-green-600 text-white px-3 py-1 rounded">Kumpulkan</button>`}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function assignmentForm(id = null) {
+    const a = id ? DB.get('assignments').find(x => x.id === id) : {};
+    const classes = DB.get('classes');
+    const subjects = DB.get('subjects');
+    openModal(id ? 'Edit Tugas' : 'Buat Tugas', `
+        <form id="assignmentForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Judul</label><input type="text" id="aTitle" value="${a.title || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Deskripsi</label><textarea id="aDesc" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${a.description || ''}</textarea></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1">Mapel</label><select id="aSubject" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+                <div><label class="block text-sm mb-1">Kelas</label><select id="aClass" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+            </div>
+            <div><label class="block text-sm mb-1">Deadline</label><input type="date" id="aDeadline" value="${a.deadline || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('assignmentForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(),
+            title: aTitle.value, description: aDesc.value,
+            subjectId: parseInt(aSubject.value), classId: parseInt(aClass.value), deadline: aDeadline.value
+        };
+        saveData('assignments', data, id);
+        closeModal(); renderAssignments();
+    };
+}
+
+
+// --- NEW: MATERI AJAR ---
+function renderMateri() {
+    const materi = DB.get('materi');
+    const subjects = DB.get('subjects');
+    const classes = DB.get('classes');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Materi Pembelajaran</h3>
+                ${currentUser.role !== 'siswa' ? `<button onclick="materiForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Tambah Materi</button>` : ''}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${materi.map(m => {
+                    const sub = subjects.find(s => s.id === m.subjectId);
+                    const cls = classes.find(c => c.id === m.classId);
+                    return `
+                        <div class="p-4 border dark:border-slate-700 rounded-lg flex flex-col">
+                            <h4 class="font-bold text-slate-800 dark:text-white">${m.title}</h4>
+                            <p class="text-xs text-slate-500 mt-1">${sub?.name || ''} | ${cls?.name || ''}</p>
+                            <p class="text-sm text-slate-600 dark:text-slate-300 mt-2 flex-grow">${m.desc}</p>
+                            <a href="${m.link}" target="_blank" class="mt-3 text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded inline-block w-fit">Buka Materi</a>
+                            ${currentUser.role !== 'siswa' ? `
+                                <div class="mt-3 flex gap-2">
+                                    <button onclick="materiForm(${m.id})" class="text-xs text-blue-500">Edit</button>
+                                    <button onclick="deleteData('materi', ${m.id}, renderMateri)" class="text-xs text-red-500">Hapus</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function materiForm(id = null) {
+    const m = id ? DB.get('materi').find(x => x.id === id) : {};
+    const classes = DB.get('classes');
+    const subjects = DB.get('subjects');
+    openModal(id ? 'Edit Materi' : 'Tambah Materi', `
+        <form id="materiForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Judul Materi</label><input type="text" id="mTitle" value="${m.title || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Deskripsi</label><textarea id="mDesc" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${m.desc || ''}</textarea></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm mb-1">Mapel</label><select id="mSubject" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${subjects.map(s => `<option value="${s.id}" ${m.subjectId==s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+                <div><label class="block text-sm mb-1">Kelas</label><select id="mClass" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${classes.map(c => `<option value="${c.id}" ${m.classId==c.id?'selected':''}>${c.name}</option>`).join('')}</select></div>
+            </div>
+            <div><label class="block text-sm mb-1">Link Materi (URL)</label><input type="url" id="mLink" value="${m.link || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" placeholder="https://..."></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('materiForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(),
+            title: mTitle.value, desc: mDesc.value,
+            subjectId: parseInt(mSubject.value), classId: parseInt(mClass.value), link: mLink.value
+        };
+        saveData('materi', data, id);
+        closeModal(); renderMateri();
+    };
+}
+
+// --- NEW: KEUANGAN SPP ---
+function renderKeuangan() {
+    const keuangan = DB.get('keuangan');
+    const students = DB.get('students');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Pembayaran SPP Siswa</h3>
+                <button onclick="keuanganForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Catat Pembayaran</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-700 text-xs uppercase">
+                        <tr><th class="px-4 py-3">Siswa</th><th class="px-4 py-3">Bulan</th><th class="px-4 py-3">Jumlah</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Aksi</th></tr>
+                    </thead>
+                    <tbody class="divide-y dark:divide-slate-700">
+                        ${keuangan.map(k => {
+                            const std = students.find(s => s.id === k.studentId);
+                            return `
+                                <tr>
+                                    <td class="px-4 py-3 text-slate-800 dark:text-white">${std?.name || 'N/A'}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${k.month}</td>
+                                    <td class="px-4 py-3 text-slate-600 dark:text-slate-300">Rp ${k.amount.toLocaleString('id-ID')}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs rounded ${k.status==='Lunas'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${k.status}</span>
+                                    </td>
+                                    <td class="px-4 py-3 flex gap-2">
+                                        ${k.status !== 'Lunas' ? `<button onclick="confirmPayment(${k.id})" class="text-xs text-green-600 font-semibold">Tandai Lunas</button>` : ''}
+                                        <button onclick="deleteData('keuangan', ${k.id}, renderKeuangan)" class="text-xs text-red-500">Hapus</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function keuanganForm(id = null) {
+    const k = id ? DB.get('keuangan').find(x => x.id === id) : {};
+    const students = DB.get('students');
+    openModal('Catat Pembayaran SPP', `
+        <form id="keuanganForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Siswa</label><select id="kStudent" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">${students.map(s => `<option value="${s.id}" ${k.studentId==s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+            <div><label class="block text-sm mb-1">Bulan</label><input type="text" id="kMonth" value="${k.month || new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Jumlah (Rp)</label><input type="number" id="kAmount" value="${k.amount || 150000}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Status</label><select id="kStatus" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"><option value="Belum Bayar" ${k.status==='Belum Bayar'?'selected':''}>Belum Bayar</option><option value="Lunas" ${k.status==='Lunas'?'selected':''}>Lunas</option></select></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('keuanganForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: id || Date.now(),
+            studentId: parseInt(kStudent.value),
+            month: kMonth.value,
+            amount: parseInt(kAmount.value),
+            status: kStatus.value
+        };
+        saveData('keuangan', data, id);
+        closeModal(); renderKeuangan();
+    };
+}
+
+function confirmPayment(id) {
+    let items = DB.get('keuangan');
+    items = items.map(item => item.id === id ? {...item, status: 'Lunas'} : item);
+    DB.set('keuangan', items);
+    showToast('Pembayaran berhasil dikonfirmasi!', 'success');
+    renderKeuangan();
+}
+
+
+// --- NEW: CETAK RAPOR ---
+function renderRapor() {
+    if(currentUser.role === 'siswa') {
+        printRapor(currentUser.id);
+        document.getElementById('content').innerHTML = `<div class="bg-white p-6 rounded-xl shadow-sm text-center">Rapor sedang dicetak. Jika tidak muncul, <button onclick="printRapor(${currentUser.id})" class="text-blue-600 underline">Klik Disini</button></div>`;
+        return;
+    }
+    
+    const students = DB.get('students');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Cetak Rapor Digital</h3>
+            <p class="text-sm text-slate-500 mb-4">Pilih siswa untuk mencetak rapor dalam format PDF (menggunakan dialog print browser).</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${students.map(s => `
+                    <button onclick="printRapor(${s.id})" class="p-4 border dark:border-slate-700 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <p class="font-bold text-slate-800 dark:text-white">${s.name}</p>
+                        <p class="text-xs text-slate-500">NIS: ${s.nis}</p>
+                        <span class="mt-2 inline-block text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Cetak Rapor</span>
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function printRapor(studentId) {
+    const student = DB.get('students').find(s => s.id === studentId);
+    const classes = DB.get('classes').find(c => c.id === student.classId);
+    const grades = DB.get('grades').filter(g => g.studentId === studentId);
+    const subjects = DB.get('subjects');
+    const profile = DB.get('school_profile')[0] || {};
+
+    let gradeRows = '';
+    let totalScore = 0;
+    let totalSubjects = 0;
+    
+    subjects.forEach(sub => {
+        const subGrades = grades.filter(g => g.subjectId === sub.id);
+        if(subGrades.length > 0){
+            const avgScore = subGrades.length ? Math.round(subGrades.reduce((s, g) => s + g.score, 0) / subGrades.length) : 0;
+            const predikat = avgScore >= 90 ? 'A' : avgScore >= 80 ? 'B' : avgScore >= 70 ? 'C' : 'D';
+            const desc = avgScore >= sub.kkm ? 'Tuntas' : 'Belum Tuntas';
+            gradeRows += `<tr><td style="padding: 8px; border: 1px solid #ddd;">${sub.name}</td><td style="padding: 8px; border: 1px solid #ddd; text-align:center;">${sub.kkm}</td><td style="padding: 8px; border: 1px solid #ddd; text-align:center;">${avgScore}</td><td style="padding: 8px; border: 1px solid #ddd; text-align:center;">${predikat}</td><td style="padding: 8px; border: 1px solid #ddd; text-align:center;">${desc}</td></tr>`;
+            totalScore += avgScore;
+            totalSubjects++;
+        }
+    });
+
+    const finalAvg = totalSubjects ? (totalScore/totalSubjects).toFixed(1) : 0;
+
+    const printArea = document.getElementById('printArea');
+    printArea.innerHTML = `
+        <div style="font-family: Arial, sans-serif; color: #000;">
+            <div style="text-align: center; border-bottom: 3px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; text-transform: uppercase;">${profile.name || 'Nama Sekolah'}</h2>
+                <p style="margin: 5px 0;">${profile.address || ''}</p>
+                <p style="margin: 0;">Telp: ${profile.phone || '-'}</p>
+            </div>
+            
+            <h3 style="text-align: center; text-decoration: underline; margin-bottom: 20px;">LAPORAN HASIL BELAJAR SISWA (RAPOR)</h3>
+            
+            <table style="width: 100%; margin-bottom: 20px; font-size: 14px;">
+                <tr><td style="width: 20%;">Nama Siswa</td><td style="width: 2%;">:</td><td><b>${student.name}</b></td><td style="width: 20%;">Kelas</td><td style="width: 2%;">:</td><td>${classes?.name || '-'}</td></tr>
+                <tr><td>NIS / NISN</td><td>:</td><td>${student.nis} / ${student.nisn}</td><td>Semester</td><td>:</td><td>${profile.semester || '-'}</td></tr>
+                <tr><td>Nama Wali</td><td>:</td><td>${student.parent}</td><td>Tahun Ajaran</td><td>:</td><td>${profile.year || '-'}</td></tr>
+            </table>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="background: #eee;">
+                        <th style="padding: 8px; border: 1px solid #ddd;">Mata Pelajaran</th>
+                        <th style="padding: 8px; border: 1px solid #ddd;">KKM</th>
+                        <th style="padding: 8px; border: 1px solid #ddd;">Nilai Akhir</th>
+                        <th style="padding: 8px; border: 1px solid #ddd;">Predikat</th>
+                        <th style="padding: 8px; border: 1px solid #ddd;">Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${gradeRows || `<tr><td colspan="5" style="text-align:center; padding: 10px; border: 1px solid #ddd;">Belum ada nilai</td></tr>`}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="padding: 8px; border: 1px solid #ddd; text-align: right;"><b>Rata-rata Nilai:</b></td>
+                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd; text-align: center;"><b>${finalAvg}</b></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 40px; font-size: 14px;">
+                <div>
+                    <p>Orang Tua / Wali,</p>
+                    <br><br><br>
+                    <p>.................................</p>
+                </div>
+                <div style="text-align: center;">
+                    <p>${profile.address?.split(',')[1] || 'Jakarta'}, ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                    <p>Kepala Sekolah,</p>
+                    <br><br><br>
+                    <p><b>${profile.principal || '-'}</b></p>
+                    <p>NIP. ${profile.principalNip || '-'}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    window.print();
+}
+
+
+function renderAnnouncements() {
+    const anns = DB.get('announcements');
+    document.getElementById('content').innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-semibold text-slate-800 dark:text-white">Pengumuman</h3>
+                ${currentUser.role !== 'siswa' ? `<button onclick="annForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Buat Pengumuman</button>` : ''}
+            </div>
+            <div class="space-y-4">
+                ${anns.map(a => `
+                    <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                        <div class="flex justify-between">
+                            <h4 class="font-bold text-slate-800 dark:text-white">${a.title}</h4>
+                            ${currentUser.role !== 'siswa' ? `
+                                <div class="flex gap-2">
+                                    <button onclick="annForm(${a.id})" class="text-xs text-blue-500">Edit</button>
+                                    <button onclick="deleteData('announcements', ${a.id}, renderAnnouncements)" class="text-xs text-red-500">Hapus</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">${a.date}</p>
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-2">${a.content}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function annForm(id = null) {
+    const a = id ? DB.get('announcements').find(x => x.id === id) : {};
+    openModal(id ? 'Edit Pengumuman' : 'Buat Pengumuman', `
+        <form id="annForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Judul</label><input type="text" id="anTitle" value="${a.title || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required></div>
+            <div><label class="block text-sm mb-1">Isi</label><textarea id="anContent" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" rows="4">${a.content || ''}</textarea></div>
+            <div><label class="block text-sm mb-1">Tanggal</label><input type="date" id="anDate" value="${a.date || new Date().toISOString().split('T')[0]}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Simpan</button>
+        </form>
+    `);
+    document.getElementById('annForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = { id: id || Date.now(), title: anTitle.value, content: anContent.value, date: anDate.value, target: 'Semua' };
+        saveData('announcements', data, id);
+        closeModal(); renderAnnouncements();
+    };
+}
+
+// --- AI ASSISTANT ---
+function getAIConfig() {
+    return JSON.parse(localStorage.getItem('gs_ai_config') || '{"provider":"gemini","model":"gemini-2.5-flash"}');
+}
+function saveAIConfig() {
+    const provider=document.getElementById('aiProvider').value;
+    const model=document.getElementById('aiModel').value.trim() || 'gemini-2.5-flash';
+    localStorage.setItem('gs_ai_config', JSON.stringify({provider,model}));
+    showToast('Pengaturan AI disimpan. API Key tetap aman di server.', 'success');
+}
+function renderAI() {
+    const cfg=getAIConfig();
+    document.getElementById('content').innerHTML=`
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div class="xl:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div class="p-5 border-b dark:border-slate-700 flex items-center justify-between">
+          <div><h3 class="text-lg font-bold text-slate-800 dark:text-white">🤖 Asisten AI Guru</h3><p class="text-sm text-slate-500">AI terhubung melalui backend server. API Key tidak disimpan di browser.</p></div>
+          <button onclick="clearAIChat()" class="text-xs px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Bersihkan</button>
+        </div>
+        <div id="aiMessages" class="h-[430px] overflow-y-auto p-5 space-y-4 bg-slate-50 dark:bg-slate-900"></div>
+        <div class="p-4 border-t dark:border-slate-700">
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button onclick="aiPrompt('Buatkan modul ajar lengkap untuk mata pelajaran Pemrograman Web kelas X dengan tujuan pembelajaran, kegiatan, asesmen, dan rubrik.')" class="text-xs px-3 py-2 rounded-full bg-blue-50 text-blue-700">Modul Ajar</button>
+            <button onclick="aiPrompt('Buatkan 20 soal pilihan ganda beserta kunci jawaban dan kisi-kisi untuk mata pelajaran yang sedang saya ajarkan.')" class="text-xs px-3 py-2 rounded-full bg-green-50 text-green-700">Buat Soal</button>
+            <button onclick="aiPrompt('Buatkan LKPD lengkap yang menarik dan siap digunakan siswa.')" class="text-xs px-3 py-2 rounded-full bg-purple-50 text-purple-700">LKPD</button>
+            <button onclick="aiPrompt('Buatkan RPP/modul pembelajaran lengkap dan sistematis.')" class="text-xs px-3 py-2 rounded-full bg-orange-50 text-orange-700">RPP</button>
+            <button onclick="aiPrompt('Analisis data nilai siswa yang tersedia dan berikan rekomendasi pembelajaran tanpa mengarang data.')" class="text-xs px-3 py-2 rounded-full bg-cyan-50 text-cyan-700">Analisis Nilai</button>
+          </div>
+          <textarea id="aiInput" rows="4" placeholder="Tulis perintah untuk AI..." class="w-full px-4 py-3 rounded-xl border dark:bg-slate-700 dark:border-slate-600"></textarea>
+          <div class="flex justify-end mt-3"><button id="aiSendBtn" onclick="sendAI()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold">Kirim ke AI</button></div>
+        </div>
+      </div>
+      <div class="space-y-6">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm">
+          <h3 class="font-semibold mb-4">⚙️ Koneksi AI</h3>
+          <div class="p-3 mb-4 rounded-lg bg-green-50 text-green-800 text-sm">🔒 <b>API Key aman.</b> Key berada di backend/server dan tidak dikirim ke HTML.</div>
+          <div class="space-y-3">
+            <div><label class="text-sm">Provider</label><select id="aiProvider" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-slate-700"><option value="gemini" ${cfg.provider==='gemini'?'selected':''}>Google Gemini</option><option value="openai" ${cfg.provider==='openai'?'selected':''}>OpenAI</option></select></div>
+            <div><label class="text-sm">Model</label><input id="aiModel" value="${escapeHTML(cfg.model||'gemini-2.5-flash')}" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-slate-700"></div>
+            <button onclick="saveAIConfig()" class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold">Simpan Pengaturan</button>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm"><h3 class="font-semibold mb-3">AI membaca konteks GURU SMART</h3><ul class="text-sm space-y-2 list-disc pl-5"><li>Siswa & kelas</li><li>Nilai & absensi</li><li>Mata pelajaran</li><li>Tugas & materi</li><li>Profil sekolah</li></ul></div>
+      </div>
+    </div>`;
+    loadAIChat();
+}
+function aiPrompt(text){document.getElementById('aiInput').value=text;sendAI();}
+function getSchoolContext(){return {school:DB.get('school_profile')[0]||{},classes:DB.get('classes'),subjects:DB.get('subjects'),students:DB.get('students'),teachers:DB.get('teachers'),grades:DB.get('grades'),attendance:DB.get('attendance'),assignments:DB.get('assignments'),materi:DB.get('materi')};}
+function loadAIChat(){const box=document.getElementById('aiMessages');if(!box)return;const msgs=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');box.innerHTML=msgs.length?msgs.map(m=>`<div class="flex ${m.role==='user'?'justify-end':''}"><div class="max-w-[90%] rounded-xl px-4 py-3 ${m.role==='user'?'bg-blue-600 text-white':'bg-white dark:bg-slate-800 shadow-sm'}"><div class="text-xs opacity-70 mb-1">${m.role==='user'?'Anda':'AI Guru'}</div><div class="whitespace-pre-wrap">${escapeHTML(m.content)}</div></div></div>`).join(''):`<div class="text-center text-slate-400 py-20">Belum ada percakapan. Silakan tanyakan sesuatu kepada AI.</div>`;box.scrollTop=box.scrollHeight;}
+function saveAIChat(msgs){localStorage.setItem('gs_ai_chat',JSON.stringify(msgs.slice(-30)));}
+function clearAIChat(){localStorage.removeItem('gs_ai_chat');loadAIChat();}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function sendAI(){
+ const input=document.getElementById('aiInput'),btn=document.getElementById('aiSendBtn'); if(!input||!input.value.trim())return;
+ const prompt=input.value.trim();input.value='';const cfg=getAIConfig();const msgs=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');msgs.push({role:'user',content:prompt});saveAIChat(msgs);loadAIChat();btn.disabled=true;btn.innerText='Memproses...';
+ try{
+   const r=await fetch('/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:cfg.provider,model:cfg.model,prompt,messages:msgs.slice(-10),context:getSchoolContext()})});
+   const d=await r.json();if(!r.ok)throw new Error(d.error||'Gagal menghubungi backend AI');
+   const latest=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');latest.push({role:'assistant',content:d.answer||'AI tidak menghasilkan jawaban.'});saveAIChat(latest);loadAIChat();
+ }catch(err){showToast(err.message,'error');const latest=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');latest.push({role:'assistant',content:'Terjadi kesalahan: '+err.message});saveAIChat(latest);loadAIChat();}
+ finally{btn.disabled=false;btn.innerText='Kirim ke AI';}
+}
+
+// --- SETTINGS ---
+function renderSettings() {
+    const profile = DB.get('school_profile')[0] || {};
+    document.getElementById('content').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Profil Sekolah</h3>
+                <form id="profileForm" class="space-y-4">
+                    <div><label class="block text-sm mb-1">Nama Sekolah</label><input type="text" id="pName" value="${profile.name || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+                    <div><label class="block text-sm mb-1">Alamat</label><input type="text" id="pAddress" value="${profile.address || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+                    <div><label class="block text-sm mb-1">Kepala Sekolah</label><input type="text" id="pPrincipal" value="${profile.principal || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm mb-1">Tahun Ajaran</label><input type="text" id="pYear" value="${profile.year || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+                        <div><label class="block text-sm mb-1">Semester</label><input type="text" id="pSemester" value="${profile.semester || ''}" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white"></div>
+                    </div>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Simpan Profil</button>
+                </form>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Backup & Restore Data</h3>
+                <div class="space-y-4">
+                    <button onclick="exportJSON()" class="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-semibold">Export Semua Data (JSON)</button>
+                    <label class="w-full block">
+                        <span class="w-full bg-yellow-600 text-white py-2 rounded-lg text-sm font-semibold text-center block cursor-pointer">Import Data (JSON)</span>
+                        <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)">
+                    </label>
+                    <hr class="dark:border-slate-700">
+                    <button onclick="seedData()" class="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-semibold">Reset Semua Data (Ke Default)</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('profileForm').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            name: pName.value, address: pAddress.value, principal: pPrincipal.value,
+            year: pYear.value, semester: pSemester.value
+        };
+        DB.set('school_profile', [data]);
+        showToast('Profil sekolah disimpan!', 'success');
+    };
+}
+
+// =================================================================
+// 7. CORE UTILS (CRUD, Import/Export)
+// =================================================================
+function saveData(key, data, id) {
+    let items = DB.get(key);
+    if (id) {
+        items = items.map(item => item.id === id ? data : item);
+    } else {
+        items.push(data);
+    }
+    DB.set(key, items);
+    showToast('Data berhasil disimpan!', 'success');
+}
+
+function deleteData(key, id, callback) {
+    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+        let items = DB.get(key);
+        items = items.filter(item => item.id !== id);
+        DB.set(key, items);
+        showToast('Data dihapus!', 'success');
+        callback();
+    }
+}
+
+function filterTable(searchId, tbodyId) {
+    const input = document.getElementById(searchId).value.toLowerCase();
+    const rows = document.getElementById(tbodyId).getElementsByTagName('tr');
+    for (let row of rows) {
+        row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
+    }
+}
+
+function exportCSV() {
+    const students = DB.get('students');
+    let csv = "NIS,NISN,Nama,Gender,Alamat,Wali,No HP\n";
+    students.forEach(s => {
+        csv += `${s.nis},${s.nisn},${s.name},${s.gender},${s.address},${s.parent},${s.phone}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'Data_Siswa.csv'; a.click();
+}
+
+function exportJSON() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('gs_')) data[key] = JSON.parse(localStorage.getItem(key));
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'Backup_GuruSmart.json'; a.click();
+}
+
+function importJSON(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            Object.keys(data).forEach(key => localStorage.setItem(key, JSON.stringify(data[key])));
+            showToast('Data berhasil diimport!', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } catch (err) {
+            showToast('Format file salah!', 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// =================================================================
+// 8. INITIALIZATION
+// =================================================================
+document.getElementById('seedDataBtn').addEventListener('click', seedData);
+
+function initApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('userName').innerText = currentUser.name;
+    document.getElementById('userRole').innerText = currentUser.role;
+    document.getElementById('userAvatar').innerText = currentUser.name.charAt(0);
+    navigate('dashboard');
+}
+
+window.onload = () => {
+    if (checkSession()) {
+        initApp();
+    }
+};
+</script>
+</body>
+</html>
