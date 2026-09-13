@@ -62,13 +62,6 @@
                 </div>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors">Masuk</button>
             </form>
-            <div class="mt-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-xs text-slate-600 dark:text-slate-300">
-                <p class="font-bold mb-2">Akun Demo (Klik Reset Data di bawah dulu):</p>
-                <p>Admin: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">admin</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">admin123</span></p>
-                <p>Guru: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">guru</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">guru123</span></p>
-                <p>Siswa: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">siswa</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">siswa123</span></p>
-                <button id="seedDataBtn" class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white py-1.5 rounded text-xs">Reset & Seed Data Demo</button>
-            </div>
         </div>
     </div>
 
@@ -157,90 +150,7 @@ let currentUser = null;
 let currentPage = 'dashboard';
 
 // =================================================================
-// 2. SEED DATA (Awal Aplikasi)
-// =================================================================
-function seedData() {
-    localStorage.clear();
-    
-    DB.set('users', [
-        { id: 1, username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
-        { id: 2, username: 'guru', password: 'guru123', role: 'guru', name: 'Budi Santoso, S.Pd.' },
-        { id: 3, username: 'siswa', password: 'siswa123', role: 'siswa', name: 'Andi Pratama' }
-    ]);
-
-    DB.set('school_profile', {
-        name: 'SMK Negeri 1 Maju Jaya',
-        address: 'Jl. Pendidikan No. 123, Jakarta',
-        phone: '021-5550123',
-        principal: 'Drs. H. Sutrisno, M.M.',
-        principalNip: '196505121990031005',
-        year: '2024/2025',
-        semester: 'Ganjil'
-    });
-
-    DB.set('classes', [
-        { id: 1, name: 'X RPL 1', level: '10', homeroom: 'Budi Santoso, S.Pd.' },
-        { id: 2, name: 'X RPL 2', level: '10', homeroom: 'Siti Aminah, S.Pd.' }
-    ]);
-
-    DB.set('subjects', [
-        { id: 1, code: 'RPL01', name: 'Pemrograman Web', teacher: 'Budi Santoso, S.Pd.', kkm: 75 },
-        { id: 2, code: 'MAT01', name: 'Matematika', teacher: 'Slamet Riyadi, S.Pd.', kkm: 70 }
-    ]);
-
-    DB.set('students', [
-        { id: 1, nis: '1001', nisn: '0091234567', name: 'Andi Pratama', gender: 'L', classId: 1, address: 'Jl. Mawar', parent: 'Bambang', phone: '08123456789' },
-        { id: 2, nis: '1002', nisn: '0091234568', name: 'Citra Lestari', gender: 'P', classId: 1, address: 'Jl. Melati', parent: 'Sutrisno', phone: '08123456780' },
-        { id: 3, nis: '1003', nisn: '0091234569', name: 'Dimas Anggara', gender: 'L', classId: 2, address: 'Jl. Anggrek', parent: 'Hadi', phone: '08123456781' }
-    ]);
-
-    DB.set('teachers', [
-        { id: 1, nip: '198001012005011001', name: 'Budi Santoso, S.Pd.', gender: 'L', subject: 'Pemrograman Web', phone: '0812345001' },
-        { id: 2, nip: '198505052008012003', name: 'Siti Aminah, S.Pd.', gender: 'P', subject: 'Basis Data', phone: '0812345002' }
-    ]);
-
-    DB.set('schedules', [
-        { id: 1, day: 'Senin', startTime: '07:30', endTime: '09:00', classId: 1, subject: 'Pemrograman Web', teacher: 'Budi Santoso, S.Pd.', room: 'Lab 1' },
-        { id: 2, day: 'Senin', startTime: '09:15', endTime: '10:45', classId: 1, subject: 'Matematika', teacher: 'Slamet Riyadi, S.Pd.', room: 'Kelas 1' },
-        { id: 3, day: 'Selasa', startTime: '07:30', endTime: '09:00', classId: 1, subject: 'Basis Data', teacher: 'Siti Aminah, S.Pd.', room: 'Lab 2' }
-    ]);
-
-    DB.set('grades', [
-        { id: 1, studentId: 1, subjectId: 1, type: 'Tugas', score: 85 },
-        { id: 2, studentId: 1, subjectId: 1, type: 'Ulangan Harian', score: 80 },
-        { id: 3, studentId: 2, subjectId: 1, type: 'Tugas', score: 90 }
-    ]);
-
-    DB.set('attendance', [
-        { id: 1, studentId: 1, date: '2024-07-15', status: 'Hadir', subject: 'Pemrograman Web' },
-        { id: 2, studentId: 2, date: '2024-07-15', status: 'Sakit', subject: 'Pemrograman Web' }
-    ]);
-
-    DB.set('assignments', [
-        { id: 1, title: 'Tugas HTML Dasar', subjectId: 1, classId: 1, deadline: '2024-08-30', description: 'Buat halaman profile dengan HTML', maxScore: 100, submissions: [] }
-    ]);
-
-    DB.set('materi', [
-        { id: 1, title: 'Pengenalan HTML', subjectId: 1, classId: 1, desc: 'Struktur dasar HTML untuk pemula', link: 'https://www.w3schools.com/html/' },
-        { id: 2, title: 'CSS Layouting', subjectId: 1, classId: 1, desc: 'Belajar Flexbox dan Grid', link: 'https://css-tricks.com/snippets/css/complete-guide-grid/' }
-    ]);
-
-    DB.set('keuangan', [
-        { id: 1, studentId: 1, month: 'Juli 2024', amount: 150000, status: 'Lunas' },
-        { id: 2, studentId: 2, month: 'Juli 2024', amount: 150000, status: 'Belum Bayar' },
-        { id: 3, studentId: 3, month: 'Juli 2024', amount: 150000, status: 'Lunas' }
-    ]);
-
-    DB.set('announcements', [
-        { id: 1, title: 'Selamat Datang!', content: 'Aplikasi GURU SMART resmi digunakan. Silakan fitur Rapor dan Keuangan sudah tersedia!', date: '2024-07-10', target: 'Semua' }
-    ]);
-
-    showToast('Data demo berhasil direset!', 'success');
-    setTimeout(() => location.reload(), 1000);
-}
-
-// =================================================================
-// 3. AUTHENTICATION
+// 2. AUTHENTICATION
 // =================================================================
 document.getElementById('loginForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -275,7 +185,7 @@ function checkSession() {
 }
 
 // =================================================================
-// 4. UI HELPERS
+// 3. UI HELPERS
 // =================================================================
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
@@ -318,7 +228,7 @@ function closeModal() {
 }
 
 // =================================================================
-// 5. NAVIGATION & ROUTER
+// 4. NAVIGATION & ROUTER
 // =================================================================
 const menus = [
     { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['admin', 'guru', 'siswa'] },
@@ -361,7 +271,7 @@ function navigate(page) {
 }
 
 // =================================================================
-// 6. PAGE RENDERING & LOGIC
+// 5. PAGE RENDERING & LOGIC
 // =================================================================
 
 function renderContent(page) {
@@ -416,13 +326,13 @@ function renderDashboard() {
             <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
                 <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Pengumuman Terbaru</h3>
                 <div class="space-y-4 max-h-80 overflow-y-auto modal-scroll">
-                    ${announcements.map(a => `
+                    ${announcements.length ? announcements.map(a => `
                         <div class="p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
                             <p class="font-medium text-sm text-blue-600 dark:text-blue-400">${a.title}</p>
                             <p class="text-xs text-slate-500 dark:text-slate-300 mt-1">${a.content}</p>
                             <p class="text-[10px] text-slate-400 mt-1">${a.date}</p>
                         </div>
-                    `).join('')}
+                    `).join('') : '<p class="text-sm text-slate-500 text-center py-4">Belum ada pengumuman.</p>'}
                 </div>
             </div>
         </div>
@@ -494,7 +404,7 @@ function renderTeachers() {
                         </tr>
                     </thead>
                     <tbody id="teacherTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
-                        ${teachers.map(t => `
+                        ${teachers.length ? teachers.map(t => `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                 <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${t.nip}</td>
                                 <td class="px-4 py-3 font-medium text-slate-800 dark:text-white">${t.name}</td>
@@ -506,7 +416,7 @@ function renderTeachers() {
                                     <button onclick="deleteData('teachers', ${t.id}, renderTeachers)" class="text-red-500 hover:text-red-700"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `).join('') : `<tr><td colspan="6" class="text-center py-4 text-slate-500">Belum ada data guru.</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -539,7 +449,7 @@ function teacherForm(id = null) {
     };
 }
 
-// --- STUDENTS --- (Same logic, just kept here)
+// --- STUDENTS ---
 function renderStudents() {
     const students = DB.get('students');
     const classes = DB.get('classes');
@@ -573,7 +483,7 @@ function renderStudents() {
                         </tr>
                     </thead>
                     <tbody id="studentTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
-                        ${students.map(s => {
+                        ${students.length ? students.map(s => {
                             const cls = classes.find(c => c.id === s.classId);
                             return `
                                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
@@ -588,7 +498,7 @@ function renderStudents() {
                                     </td>
                                 </tr>
                             `;
-                        }).join('')}
+                        }).join('') : `<tr><td colspan="6" class="text-center py-4 text-slate-500">Belum ada data siswa.</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -639,7 +549,6 @@ function filterStudentClass() {
 }
 
 // --- CLASSES, SUBJECTS, SCHEDULES, ATTENDANCE, GRADES, ASSIGNMENTS, ANNOUNCEMENTS ---
-// (Kept exactly the same to save space, ensure you don't overwrite them if copying specific blocks)
 
 function renderClasses() {
     const classes = DB.get('classes');
@@ -651,7 +560,7 @@ function renderClasses() {
                 <button onclick="classForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Tambah Kelas</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${classes.map(c => {
+                ${classes.length ? classes.map(c => {
                     const count = students.filter(s => s.classId === c.id).length;
                     return `
                         <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-md transition-shadow">
@@ -664,7 +573,7 @@ function renderClasses() {
                             </div>
                         </div>
                     `;
-                }).join('')}
+                }).join('') : '<div class="col-span-3 text-center py-8 text-slate-500">Belum ada data kelas.</div>'}
             </div>
         </div>
     `;
@@ -702,7 +611,7 @@ function renderSubjects() {
                         <tr><th class="px-4 py-3">Kode</th><th class="px-4 py-3">Nama Mapel</th><th class="px-4 py-3">Guru</th><th class="px-4 py-3">KKM</th><th class="px-4 py-3">Aksi</th></tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-                        ${subjects.map(s => `
+                        ${subjects.length ? subjects.map(s => `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                                 <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${s.code}</td>
                                 <td class="px-4 py-3 font-medium text-slate-800 dark:text-white">${s.name}</td>
@@ -713,7 +622,7 @@ function renderSubjects() {
                                     <button onclick="deleteData('subjects', ${s.id}, renderSubjects)" class="text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `).join('') : `<tr><td colspan="5" class="text-center py-4 text-slate-500">Belum ada data mata pelajaran.</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -822,7 +731,7 @@ function renderAttendance() {
                         <tr><th class="px-4 py-3">Nama Siswa</th><th class="px-4 py-3">Status</th></tr>
                     </thead>
                     <tbody class="divide-y dark:divide-slate-700">
-                        ${students.map(s => `
+                        ${students.length ? students.map(s => `
                             <tr>
                                 <td class="px-4 py-3 text-slate-800 dark:text-white">${s.name}</td>
                                 <td class="px-4 py-3">
@@ -834,7 +743,7 @@ function renderAttendance() {
                                     </select>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `).join('') : `<tr><td colspan="2" class="text-center py-4 text-slate-500">Belum ada data siswa.</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -874,10 +783,10 @@ function renderGrades() {
             <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
                 <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Nilai Saya</h3>
                 <ul class="divide-y dark:divide-slate-700">
-                    ${myGrades.map(g => {
+                    ${myGrades.length ? myGrades.map(g => {
                         const sub = subjects.find(s => s.id === g.subjectId);
                         return `<li class="py-3 flex justify-between"><span class="text-slate-700 dark:text-slate-300">${sub?.name || 'N/A'} (${g.type})</span><span class="font-bold text-blue-600">${g.score}</span></li>`;
-                    }).join('')}
+                    }).join('') : '<li class="py-4 text-center text-slate-500">Belum ada nilai.</li>'}
                 </ul>
             </div>
         `;
@@ -896,7 +805,7 @@ function renderGrades() {
                         <tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Mapel</th><th class="px-4 py-3">Tipe</th><th class="px-4 py-3">Nilai</th><th class="px-4 py-3">Aksi</th></tr>
                     </thead>
                     <tbody class="divide-y dark:divide-slate-700">
-                        ${grades.map(g => {
+                        ${grades.length ? grades.map(g => {
                             const std = students.find(s => s.id === g.studentId);
                             const sub = subjects.find(s => s.id === g.subjectId);
                             return `
@@ -911,7 +820,7 @@ function renderGrades() {
                                     </td>
                                 </tr>
                             `;
-                        }).join('')}
+                        }).join('') : `<tr><td colspan="5" class="text-center py-4 text-slate-500">Belum ada data nilai.</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -955,7 +864,7 @@ function renderAssignments() {
                 ${currentUser.role !== 'siswa' ? `<button onclick="assignmentForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Buat Tugas</button>` : ''}
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${assignments.map(a => `
+                ${assignments.length ? assignments.map(a => `
                     <div class="p-4 border dark:border-slate-700 rounded-lg">
                         <h4 class="font-bold text-slate-800 dark:text-white">${a.title}</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deadline: ${a.deadline}</p>
@@ -967,7 +876,7 @@ function renderAssignments() {
                             </div>
                         ` : `<button class="mt-3 text-xs bg-green-600 text-white px-3 py-1 rounded">Kumpulkan</button>`}
                     </div>
-                `).join('')}
+                `).join('') : '<div class="col-span-3 text-center py-8 text-slate-500">Belum ada tugas.</div>'}
             </div>
         </div>
     `;
@@ -1002,7 +911,7 @@ function assignmentForm(id = null) {
 }
 
 
-// --- NEW: MATERI AJAR ---
+// --- MATERI AJAR ---
 function renderMateri() {
     const materi = DB.get('materi');
     const subjects = DB.get('subjects');
@@ -1014,7 +923,7 @@ function renderMateri() {
                 ${currentUser.role !== 'siswa' ? `<button onclick="materiForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Tambah Materi</button>` : ''}
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${materi.map(m => {
+                ${materi.length ? materi.map(m => {
                     const sub = subjects.find(s => s.id === m.subjectId);
                     const cls = classes.find(c => c.id === m.classId);
                     return `
@@ -1031,7 +940,7 @@ function renderMateri() {
                             ` : ''}
                         </div>
                     `;
-                }).join('')}
+                }).join('') : '<div class="col-span-3 text-center py-8 text-slate-500">Belum ada materi ajar.</div>'}
             </div>
         </div>
     `;
@@ -1065,7 +974,7 @@ function materiForm(id = null) {
     };
 }
 
-// --- NEW: KEUANGAN SPP ---
+// --- KEUANGAN SPP ---
 function renderKeuangan() {
     const keuangan = DB.get('keuangan');
     const students = DB.get('students');
@@ -1081,7 +990,7 @@ function renderKeuangan() {
                         <tr><th class="px-4 py-3">Siswa</th><th class="px-4 py-3">Bulan</th><th class="px-4 py-3">Jumlah</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Aksi</th></tr>
                     </thead>
                     <tbody class="divide-y dark:divide-slate-700">
-                        ${keuangan.map(k => {
+                        ${keuangan.length ? keuangan.map(k => {
                             const std = students.find(s => s.id === k.studentId);
                             return `
                                 <tr>
@@ -1097,7 +1006,7 @@ function renderKeuangan() {
                                     </td>
                                 </tr>
                             `;
-                        }).join('')}
+                        }).join('') : `<tr><td colspan="5" class="text-center py-4 text-slate-500">Belum ada data pembayaran.</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -1140,7 +1049,7 @@ function confirmPayment(id) {
 }
 
 
-// --- NEW: CETAK RAPOR ---
+// --- CETAK RAPOR ---
 function renderRapor() {
     if(currentUser.role === 'siswa') {
         printRapor(currentUser.id);
@@ -1154,13 +1063,13 @@ function renderRapor() {
             <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Cetak Rapor Digital</h3>
             <p class="text-sm text-slate-500 mb-4">Pilih siswa untuk mencetak rapor dalam format PDF (menggunakan dialog print browser).</p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                ${students.map(s => `
+                ${students.length ? students.map(s => `
                     <button onclick="printRapor(${s.id})" class="p-4 border dark:border-slate-700 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <p class="font-bold text-slate-800 dark:text-white">${s.name}</p>
                         <p class="text-xs text-slate-500">NIS: ${s.nis}</p>
                         <span class="mt-2 inline-block text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Cetak Rapor</span>
                     </button>
-                `).join('')}
+                `).join('') : '<div class="col-span-3 text-center py-8 text-slate-500">Belum ada data siswa.</div>'}
             </div>
         </div>
     `;
@@ -1258,7 +1167,7 @@ function renderAnnouncements() {
                 ${currentUser.role !== 'siswa' ? `<button onclick="annForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Buat Pengumuman</button>` : ''}
             </div>
             <div class="space-y-4">
-                ${anns.map(a => `
+                ${anns.length ? anns.map(a => `
                     <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                         <div class="flex justify-between">
                             <h4 class="font-bold text-slate-800 dark:text-white">${a.title}</h4>
@@ -1272,7 +1181,7 @@ function renderAnnouncements() {
                         <p class="text-xs text-slate-400 mt-1">${a.date}</p>
                         <p class="text-sm text-slate-600 dark:text-slate-300 mt-2">${a.content}</p>
                     </div>
-                `).join('')}
+                `).join('') : '<p class="text-sm text-slate-500 text-center py-4">Belum ada pengumuman.</p>'}
             </div>
         </div>
     `;
@@ -1379,15 +1288,16 @@ function renderSettings() {
                 </form>
             </div>
             <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
-                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Backup & Restore Data</h3>
+                <h3 class="font-semibold text-slate-800 dark:text-white mb-4">Manajemen Akun & Backup Data</h3>
                 <div class="space-y-4">
+                    <button onclick="userForm()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold">Kelola Akun Login</button>
                     <button onclick="exportJSON()" class="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-semibold">Export Semua Data (JSON)</button>
                     <label class="w-full block">
                         <span class="w-full bg-yellow-600 text-white py-2 rounded-lg text-sm font-semibold text-center block cursor-pointer">Import Data (JSON)</span>
                         <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)">
                     </label>
                     <hr class="dark:border-slate-700">
-                    <button onclick="seedData()" class="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-semibold">Reset Semua Data (Ke Default)</button>
+                    <button onclick="clearAllData()" class="w-full bg-red-600 text-white py-2 rounded-lg text-sm font-semibold">Hapus Semua Data Sekolah</button>
                 </div>
             </div>
         </div>
@@ -1403,8 +1313,60 @@ function renderSettings() {
     };
 }
 
+function clearAllData() {
+    if (confirm('PERINGATAN: Semua data sekolah (siswa, guru, nilai, dll) akan dihapus permanen. Lanjutkan?')) {
+        localStorage.clear();
+        showToast('Semua data telah dihapus.', 'success');
+        setTimeout(() => location.reload(), 1000);
+    }
+}
+
+function userForm() {
+    const users = DB.get('users');
+    openModal('Kelola Akun Login', `
+        <p class="text-sm text-slate-500 mb-4">Pastikan Anda memiliki minimal satu akun Admin untuk mengelola sistem.</p>
+        <div id="userList" class="space-y-3 mb-4">
+            ${users.map(u => `
+                <div class="flex items-center justify-between p-3 border rounded-lg dark:border-slate-600">
+                    <div>
+                        <p class="font-semibold text-slate-800 dark:text-white">${u.username} <span class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded ml-2">${u.role}</span></p>
+                        <p class="text-xs text-slate-500">${u.name}</p>
+                    </div>
+                    <button onclick="deleteData('users', ${u.id}, userForm)" class="text-red-500 text-xs">Hapus</button>
+                </div>
+            `).join('')}
+        </div>
+        <hr class="dark:border-slate-700 my-4">
+        <form id="userFormEl" class="space-y-3">
+            <h4 class="font-semibold text-slate-800 dark:text-white">Tambah Akun Baru</h4>
+            <input type="text" id="uName" placeholder="Nama Lengkap" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required>
+            <input type="text" id="uUsername" placeholder="Username" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required>
+            <input type="password" id="uPassword" placeholder="Password" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white" required>
+            <select id="uRole" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-700 dark:text-white">
+                <option value="admin">Admin</option>
+                <option value="guru">Guru</option>
+                <option value="siswa">Siswa</option>
+            </select>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Tambah Akun</button>
+        </form>
+    `);
+    document.getElementById('userFormEl').onsubmit = (e) => {
+        e.preventDefault();
+        const data = {
+            id: Date.now(),
+            name: uName.value,
+            username: uUsername.value,
+            password: uPassword.value,
+            role: uRole.value
+        };
+        saveData('users', data, null);
+        showToast('Akun berhasil ditambahkan!', 'success');
+        userForm(); // Reload modal
+    };
+}
+
 // =================================================================
-// 7. CORE UTILS (CRUD, Import/Export)
+// 6. CORE UTILS (CRUD, Import/Export)
 // =================================================================
 function saveData(key, data, id) {
     let items = DB.get(key);
@@ -1477,22 +1439,38 @@ function importJSON(e) {
 }
 
 // =================================================================
-// 8. INITIALIZATION
+// 7. INITIALIZATION
 // =================================================================
-document.getElementById('seedDataBtn').addEventListener('click', seedData);
-
 function initApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
     document.getElementById('userName').innerText = currentUser.name;
     document.getElementById('userRole').innerText = currentUser.role;
     document.getElementById('userAvatar').innerText = currentUser.name.charAt(0);
+    
+    // Auto-create super admin if no users exist
+    const users = DB.get('users');
+    if (users.length === 0) {
+        DB.set('users', [
+            { id: 1, username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' }
+        ]);
+        showToast('Akun default dibuat: admin / admin123', 'info');
+    }
+    
     navigate('dashboard');
 }
 
 window.onload = () => {
     if (checkSession()) {
         initApp();
+    } else {
+        // Auto-create super admin if no users exist on login screen
+        const users = DB.get('users');
+        if (users.length === 0) {
+            DB.set('users', [
+                { id: 1, username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' }
+            ]);
+        }
     }
 };
 </script>
