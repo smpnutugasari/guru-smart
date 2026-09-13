@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURU SMART - Sistem Manajemen Sekolah</title>
+    <title>GURU SMART - Sistem Manajemen Sekolah & Asisten Guru AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -63,10 +63,8 @@
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors">Masuk</button>
             </form>
             <div class="mt-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-xs text-slate-600 dark:text-slate-300">
-                <p class="font-bold mb-2">Akun Demo (Klik Reset Data di bawah dulu):</p>
-                <p>Admin: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">admin</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">admin123</span></p>
-                <p>Guru: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">guru</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">guru123</span></p>
-                <p>Siswa: <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">siswa</span> / <span class="font-mono bg-white dark:bg-slate-800 px-1 rounded">siswa123</span></p>
+                <p class="font-bold mb-2">Login</p>
+                <p>Gunakan akun yang dibuat administrator server.</p>
                 <button id="seedDataBtn" class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white py-1.5 rounded text-xs">Reset & Seed Data Demo</button>
             </div>
         </div>
@@ -148,10 +146,38 @@
 // 1. CORE SYSTEM & DATABASE (LocalStorage)
 // =================================================================
 const DB = {
-    get: (key) => JSON.parse(localStorage.getItem(`gs_${key}`)) || [],
-    set: (key, data) => localStorage.setItem(`gs_${key}`, JSON.stringify(data)),
-    delete: (key) => localStorage.removeItem(`gs_${key}`)
+    get: (key) => {
+        const raw = localStorage.getItem(`gs_${key}`);
+        if (raw === null) return key === 'school_profile' ? {} : [];
+        try { return JSON.parse(raw); } catch { return key === 'school_profile' ? {} : []; }
+    },
+    set: (key, data) => {
+        localStorage.setItem(`gs_${key}`, JSON.stringify(data));
+        // Persist to server; UI remains responsive even if network is temporarily unavailable.
+        fetch('/api/data/' + encodeURIComponent(key), {
+            method: 'PUT', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({data})
+        }).catch(() => {});
+    },
+    delete: (key) => {
+        localStorage.removeItem(`gs_${key}`);
+        fetch('/api/data/' + encodeURIComponent(key), {method:'DELETE'}).catch(() => {});
+    }
 };
+
+async function syncFromServer() {
+    try {
+        const res = await fetch('/api/bootstrap');
+        if (!res.ok) return;
+        const payload = await res.json();
+        Object.entries(payload.data || {}).forEach(([key, value]) => {
+            localStorage.setItem(`gs_${key}`, JSON.stringify(value));
+        });
+        localStorage.setItem('gs_serverOnline', 'true');
+    } catch (e) {
+        localStorage.setItem('gs_serverOnline', 'false');
+    }
+}
 
 let currentUser = null;
 let currentPage = 'dashboard';
@@ -159,119 +185,47 @@ let currentPage = 'dashboard';
 // =================================================================
 // 2. SEED DATA (Awal Aplikasi)
 // =================================================================
-function seedData() {
-    localStorage.clear();
-    
-    DB.set('users', [
-        { id: 1, username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
-        { id: 2, username: 'guru', password: 'guru123', role: 'guru', name: 'Budi Santoso, S.Pd.' },
-        { id: 3, username: 'siswa', password: 'siswa123', role: 'siswa', name: 'Andi Pratama' }
-    ]);
-
-    DB.set('school_profile', {
-        name: 'SMK Negeri 1 Maju Jaya',
-        address: 'Jl. Pendidikan No. 123, Jakarta',
-        phone: '021-5550123',
-        principal: 'Drs. H. Sutrisno, M.M.',
-        principalNip: '196505121990031005',
-        year: '2024/2025',
-        semester: 'Ganjil'
-    });
-
-    DB.set('classes', [
-        { id: 1, name: 'X RPL 1', level: '10', homeroom: 'Budi Santoso, S.Pd.' },
-        { id: 2, name: 'X RPL 2', level: '10', homeroom: 'Siti Aminah, S.Pd.' }
-    ]);
-
-    DB.set('subjects', [
-        { id: 1, code: 'RPL01', name: 'Pemrograman Web', teacher: 'Budi Santoso, S.Pd.', kkm: 75 },
-        { id: 2, code: 'MAT01', name: 'Matematika', teacher: 'Slamet Riyadi, S.Pd.', kkm: 70 }
-    ]);
-
-    DB.set('students', [
-        { id: 1, nis: '1001', nisn: '0091234567', name: 'Andi Pratama', gender: 'L', classId: 1, address: 'Jl. Mawar', parent: 'Bambang', phone: '08123456789' },
-        { id: 2, nis: '1002', nisn: '0091234568', name: 'Citra Lestari', gender: 'P', classId: 1, address: 'Jl. Melati', parent: 'Sutrisno', phone: '08123456780' },
-        { id: 3, nis: '1003', nisn: '0091234569', name: 'Dimas Anggara', gender: 'L', classId: 2, address: 'Jl. Anggrek', parent: 'Hadi', phone: '08123456781' }
-    ]);
-
-    DB.set('teachers', [
-        { id: 1, nip: '198001012005011001', name: 'Budi Santoso, S.Pd.', gender: 'L', subject: 'Pemrograman Web', phone: '0812345001' },
-        { id: 2, nip: '198505052008012003', name: 'Siti Aminah, S.Pd.', gender: 'P', subject: 'Basis Data', phone: '0812345002' }
-    ]);
-
-    DB.set('schedules', [
-        { id: 1, day: 'Senin', startTime: '07:30', endTime: '09:00', classId: 1, subject: 'Pemrograman Web', teacher: 'Budi Santoso, S.Pd.', room: 'Lab 1' },
-        { id: 2, day: 'Senin', startTime: '09:15', endTime: '10:45', classId: 1, subject: 'Matematika', teacher: 'Slamet Riyadi, S.Pd.', room: 'Kelas 1' },
-        { id: 3, day: 'Selasa', startTime: '07:30', endTime: '09:00', classId: 1, subject: 'Basis Data', teacher: 'Siti Aminah, S.Pd.', room: 'Lab 2' }
-    ]);
-
-    DB.set('grades', [
-        { id: 1, studentId: 1, subjectId: 1, type: 'Tugas', score: 85 },
-        { id: 2, studentId: 1, subjectId: 1, type: 'Ulangan Harian', score: 80 },
-        { id: 3, studentId: 2, subjectId: 1, type: 'Tugas', score: 90 }
-    ]);
-
-    DB.set('attendance', [
-        { id: 1, studentId: 1, date: '2024-07-15', status: 'Hadir', subject: 'Pemrograman Web' },
-        { id: 2, studentId: 2, date: '2024-07-15', status: 'Sakit', subject: 'Pemrograman Web' }
-    ]);
-
-    DB.set('assignments', [
-        { id: 1, title: 'Tugas HTML Dasar', subjectId: 1, classId: 1, deadline: '2024-08-30', description: 'Buat halaman profile dengan HTML', maxScore: 100, submissions: [] }
-    ]);
-
-    DB.set('materi', [
-        { id: 1, title: 'Pengenalan HTML', subjectId: 1, classId: 1, desc: 'Struktur dasar HTML untuk pemula', link: 'https://www.w3schools.com/html/' },
-        { id: 2, title: 'CSS Layouting', subjectId: 1, classId: 1, desc: 'Belajar Flexbox dan Grid', link: 'https://css-tricks.com/snippets/css/complete-guide-grid/' }
-    ]);
-
-    DB.set('keuangan', [
-        { id: 1, studentId: 1, month: 'Juli 2024', amount: 150000, status: 'Lunas' },
-        { id: 2, studentId: 2, month: 'Juli 2024', amount: 150000, status: 'Belum Bayar' },
-        { id: 3, studentId: 3, month: 'Juli 2024', amount: 150000, status: 'Lunas' }
-    ]);
-
-    DB.set('announcements', [
-        { id: 1, title: 'Selamat Datang!', content: 'Aplikasi GURU SMART resmi digunakan. Silakan fitur Rapor dan Keuangan sudah tersedia!', date: '2024-07-10', target: 'Semua' }
-    ]);
-
-    showToast('Data demo berhasil direset!', 'success');
-    setTimeout(() => location.reload(), 1000);
+async function seedData() {
+    if (!confirm('Reset semua data ke data awal? Tindakan ini hanya untuk administrator.')) return;
+    try {
+        const r=await fetch('/api/admin/reset',{method:'POST',credentials:'same-origin'});
+        const j=await r.json();
+        if(!r.ok) throw new Error(j.error||'Gagal reset data');
+        await syncFromServer(); showToast('Data server berhasil direset.','success'); setTimeout(()=>location.reload(),700);
+    } catch(e){ showToast(e.message,'error'); }
 }
 
 // =================================================================
 // 3. AUTHENTICATION
 // =================================================================
-document.getElementById('loginForm').addEventListener('submit', (e) => {
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = document.getElementById('loginUsername').value;
+    const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const users = DB.get('users');
-    
-    const user = users.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-        currentUser = user;
-        localStorage.setItem('gs_currentUser', JSON.stringify(user));
+    try {
+        const r = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({username,password}) });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Login gagal');
+        currentUser = j.user;
+        localStorage.setItem('gs_currentUser', JSON.stringify(currentUser));
+        // Tampilkan aplikasi segera setelah autentikasi berhasil. Sinkronisasi data berjalan setelahnya.
         initApp();
-    } else {
-        showToast('Username atau password salah!', 'error');
-    }
+        syncFromServer().catch(()=>{});
+    } catch (err) { showToast(err.message, 'error'); }
 });
-
-function logout() {
-    localStorage.removeItem('gs_currentUser');
-    currentUser = null;
-    location.reload();
+async function serverLogout(){
+    try { await fetch('/api/auth/logout', {method:'POST', credentials:'same-origin'}); } catch {}
+    localStorage.removeItem('gs_currentUser'); currentUser=null; location.reload();
 }
-
-function checkSession() {
-    const session = localStorage.getItem('gs_currentUser');
-    if (session) {
-        currentUser = JSON.parse(session);
+function logout(){ serverLogout(); }
+async function checkSession(){
+    try {
+        const r = await fetch('/api/auth/me', {credentials:'same-origin'});
+        if (!r.ok) return false;
+        const j = await r.json(); currentUser=j.user;
+        localStorage.setItem('gs_currentUser', JSON.stringify(currentUser));
         return true;
-    }
-    return false;
+    } catch { return false; }
 }
 
 // =================================================================
@@ -321,8 +275,7 @@ function closeModal() {
 // 5. NAVIGATION & ROUTER
 // =================================================================
 const menus = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['admin', 'guru', 'siswa'] },
-    { id: 'ai', label: 'Asisten AI Guru', icon: 'M12 2a7 7 0 00-7 7v3a7 7 0 0014 0V9a7 7 0 00-7-7zm-4 18h8M9 22h6', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', roles: ['admin', 'guru'] },
     { id: 'teachers', label: 'Data Guru', icon: 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z', roles: ['admin'] },
     { id: 'students', label: 'Data Siswa', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', roles: ['admin', 'guru'] },
     { id: 'classes', label: 'Kelas', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', roles: ['admin'] },
@@ -335,8 +288,9 @@ const menus = [
     { id: 'keuangan', label: 'Keuangan SPP', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1V6m0 2c-1.11 0-2.08.402-2.599 1M3 12h18M12 18v-1m0 1v-1', roles: ['admin'] },
     { id: 'rapor', label: 'Cetak Rapor', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', roles: ['admin', 'guru', 'siswa'] },
     { id: 'announcements', label: 'Pengumuman', icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z', roles: ['admin', 'guru', 'siswa'] },
-    { id: 'settings', label: 'Pengaturan', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', roles: ['admin', 'guru', 'siswa'] }
-];
+    { id: 'settings', label: 'Pengaturan', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', roles: ['admin', 'guru', 'siswa'] },
+    { id: 'ai_assistant', label: 'Asisten Guru AI', icon: 'M12 3a9 9 0 100 18 9 9 0 000-18zm-1 5h2v2h-2V8zm0 4h2v6h-2v-6z', roles: ['admin', 'guru', 'siswa'] },
+]
 
 function renderMenu() {
     const navMenu = document.getElementById('navMenu');
@@ -370,7 +324,6 @@ function renderContent(page) {
     
     switch(page) {
         case 'dashboard': renderDashboard(); break;
-        case 'ai': renderAI(); break;
         case 'teachers': renderTeachers(); break;
         case 'students': renderStudents(); break;
         case 'classes': renderClasses(); break;
@@ -383,6 +336,7 @@ function renderContent(page) {
         case 'keuangan': renderKeuangan(); break;
         case 'rapor': renderRapor(); break;
         case 'announcements': renderAnnouncements(); break;
+        case 'ai_assistant': renderAIAssistant(); break;
         case 'settings': renderSettings(); break;
         default: content.innerHTML = '<h1>404 Not Found</h1>';
     }
@@ -1171,7 +1125,7 @@ function printRapor(studentId) {
     const classes = DB.get('classes').find(c => c.id === student.classId);
     const grades = DB.get('grades').filter(g => g.studentId === studentId);
     const subjects = DB.get('subjects');
-    const profile = DB.get('school_profile')[0] || {};
+    const profile = DB.get('school_profile') || {};
 
     let gradeRows = '';
     let totalScore = 0;
@@ -1296,73 +1250,98 @@ function annForm(id = null) {
     };
 }
 
-// --- AI ASSISTANT ---
-function getAIConfig() {
-    return JSON.parse(localStorage.getItem('gs_ai_config') || '{"provider":"gemini","model":"gemini-2.5-flash"}');
-}
-function saveAIConfig() {
-    const provider=document.getElementById('aiProvider').value;
-    const model=document.getElementById('aiModel').value.trim() || 'gemini-2.5-flash';
-    localStorage.setItem('gs_ai_config', JSON.stringify({provider,model}));
-    showToast('Pengaturan AI disimpan. API Key tetap aman di server.', 'success');
-}
-function renderAI() {
-    const cfg=getAIConfig();
-    document.getElementById('content').innerHTML=`
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <div class="xl:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
-        <div class="p-5 border-b dark:border-slate-700 flex items-center justify-between">
-          <div><h3 class="text-lg font-bold text-slate-800 dark:text-white">🤖 Asisten AI Guru</h3><p class="text-sm text-slate-500">AI terhubung melalui backend server. API Key tidak disimpan di browser.</p></div>
-          <button onclick="clearAIChat()" class="text-xs px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">Bersihkan</button>
-        </div>
-        <div id="aiMessages" class="h-[430px] overflow-y-auto p-5 space-y-4 bg-slate-50 dark:bg-slate-900"></div>
-        <div class="p-4 border-t dark:border-slate-700">
-          <div class="flex flex-wrap gap-2 mb-3">
-            <button onclick="aiPrompt('Buatkan modul ajar lengkap untuk mata pelajaran Pemrograman Web kelas X dengan tujuan pembelajaran, kegiatan, asesmen, dan rubrik.')" class="text-xs px-3 py-2 rounded-full bg-blue-50 text-blue-700">Modul Ajar</button>
-            <button onclick="aiPrompt('Buatkan 20 soal pilihan ganda beserta kunci jawaban dan kisi-kisi untuk mata pelajaran yang sedang saya ajarkan.')" class="text-xs px-3 py-2 rounded-full bg-green-50 text-green-700">Buat Soal</button>
-            <button onclick="aiPrompt('Buatkan LKPD lengkap yang menarik dan siap digunakan siswa.')" class="text-xs px-3 py-2 rounded-full bg-purple-50 text-purple-700">LKPD</button>
-            <button onclick="aiPrompt('Buatkan RPP/modul pembelajaran lengkap dan sistematis.')" class="text-xs px-3 py-2 rounded-full bg-orange-50 text-orange-700">RPP</button>
-            <button onclick="aiPrompt('Analisis data nilai siswa yang tersedia dan berikan rekomendasi pembelajaran tanpa mengarang data.')" class="text-xs px-3 py-2 rounded-full bg-cyan-50 text-cyan-700">Analisis Nilai</button>
-          </div>
-          <textarea id="aiInput" rows="4" placeholder="Tulis perintah untuk AI..." class="w-full px-4 py-3 rounded-xl border dark:bg-slate-700 dark:border-slate-600"></textarea>
-          <div class="flex justify-end mt-3"><button id="aiSendBtn" onclick="sendAI()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold">Kirim ke AI</button></div>
-        </div>
-      </div>
-      <div class="space-y-6">
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm">
-          <h3 class="font-semibold mb-4">⚙️ Koneksi AI</h3>
-          <div class="p-3 mb-4 rounded-lg bg-green-50 text-green-800 text-sm">🔒 <b>API Key aman.</b> Key berada di backend/server dan tidak dikirim ke HTML.</div>
-          <div class="space-y-3">
-            <div><label class="text-sm">Provider</label><select id="aiProvider" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-slate-700"><option value="gemini" ${cfg.provider==='gemini'?'selected':''}>Google Gemini</option><option value="openai" ${cfg.provider==='openai'?'selected':''}>OpenAI</option></select></div>
-            <div><label class="text-sm">Model</label><input id="aiModel" value="${escapeHTML(cfg.model||'gemini-2.5-flash')}" class="w-full mt-1 px-3 py-2 border rounded-lg dark:bg-slate-700"></div>
-            <button onclick="saveAIConfig()" class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold">Simpan Pengaturan</button>
-          </div>
-        </div>
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm"><h3 class="font-semibold mb-3">AI membaca konteks GURU SMART</h3><ul class="text-sm space-y-2 list-disc pl-5"><li>Siswa & kelas</li><li>Nilai & absensi</li><li>Mata pelajaran</li><li>Tugas & materi</li><li>Profil sekolah</li></ul></div>
-      </div>
-    </div>`;
+// --- ASISTEN GURU AI ---
+function renderAIAssistant() {
+    document.getElementById('content').innerHTML = `
+        <div class="max-w-6xl mx-auto space-y-6">
+            <div class="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-6 rounded-2xl shadow-lg">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">🤖</div>
+                            <div><h3 class="text-2xl font-bold">Asisten Guru AI</h3><p class="text-blue-100 text-sm">Bantu menyiapkan pembelajaran, administrasi, dan analisis siswa dalam bahasa Indonesia.</p></div>
+                        </div>
+                    </div>
+                    <div id="aiStatus" class="px-3 py-2 rounded-lg bg-white/15 text-sm">Memeriksa koneksi AI...</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b dark:border-slate-700 flex items-center justify-between">
+                        <h4 class="font-semibold text-slate-800 dark:text-white">Percakapan</h4>
+                        <button onclick="clearAIChat()" class="text-xs text-red-500 hover:text-red-700">Hapus percakapan</button>
+                    </div>
+                    <div id="aiMessages" class="h-[480px] overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900/40"></div>
+                    <div class="p-4 border-t dark:border-slate-700 bg-white dark:bg-slate-800">
+                        <div class="flex gap-2 flex-wrap mb-3">
+                            <button onclick="setAIPrompt('Buatkan modul ajar lengkap sesuai data sekolah saya untuk mata pelajaran yang saya ajar.')" class="px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-xs hover:bg-blue-100">📚 Modul Ajar</button>
+                            <button onclick="setAIPrompt('Buatkan 20 soal pilihan ganda lengkap dengan kunci jawaban dan pembahasan.')" class="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs hover:bg-emerald-100">❓ Buat Soal</button>
+                            <button onclick="setAIPrompt('Buatkan LKPD yang siap digunakan siswa untuk materi pelajaran saya.')" class="px-3 py-2 rounded-lg bg-amber-50 text-amber-700 text-xs hover:bg-amber-100">📝 LKPD</button>
+                            <button onclick="setAIPrompt('Analisis data nilai dan absensi siswa saya. Berikan siswa yang perlu remedial dan rekomendasi tindak lanjut.')" class="px-3 py-2 rounded-lg bg-violet-50 text-violet-700 text-xs hover:bg-violet-100">📊 Analisis</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <textarea id="aiInput" rows="3" placeholder="Tulis kebutuhan Anda, misalnya: Buatkan modul ajar Bahasa Indonesia kelas 7 tentang teks deskripsi..." class="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            <button onclick="sendAIMessage()" class="self-end bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-semibold">Kirim</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5">
+                    <h4 class="font-semibold text-slate-800 dark:text-white mb-4">AI mengenal konteks aplikasi</h4>
+                    <div class="space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">👩‍🏫 Data guru</div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">👨‍🎓 Data siswa & kelas</div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">📚 Mata pelajaran & materi</div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">📈 Nilai & absensi</div>
+                        <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">📝 Tugas & pengumuman</div>
+                    </div>
+                    <div class="mt-5 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-xs text-blue-800 dark:text-blue-200">AI diarahkan untuk selalu menjawab dalam bahasa Indonesia yang mudah dipahami guru. Hindari istilah teknis pemrograman kecuali memang ditanyakan.</div>
+                </div>
+            </div>
+        </div>`;
     loadAIChat();
+    checkAIHealth();
 }
-function aiPrompt(text){document.getElementById('aiInput').value=text;sendAI();}
-function getSchoolContext(){return {school:DB.get('school_profile')[0]||{},classes:DB.get('classes'),subjects:DB.get('subjects'),students:DB.get('students'),teachers:DB.get('teachers'),grades:DB.get('grades'),attendance:DB.get('attendance'),assignments:DB.get('assignments'),materi:DB.get('materi')};}
-function loadAIChat(){const box=document.getElementById('aiMessages');if(!box)return;const msgs=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');box.innerHTML=msgs.length?msgs.map(m=>`<div class="flex ${m.role==='user'?'justify-end':''}"><div class="max-w-[90%] rounded-xl px-4 py-3 ${m.role==='user'?'bg-blue-600 text-white':'bg-white dark:bg-slate-800 shadow-sm'}"><div class="text-xs opacity-70 mb-1">${m.role==='user'?'Anda':'AI Guru'}</div><div class="whitespace-pre-wrap">${escapeHTML(m.content)}</div></div></div>`).join(''):`<div class="text-center text-slate-400 py-20">Belum ada percakapan. Silakan tanyakan sesuatu kepada AI.</div>`;box.scrollTop=box.scrollHeight;}
-function saveAIChat(msgs){localStorage.setItem('gs_ai_chat',JSON.stringify(msgs.slice(-30)));}
-function clearAIChat(){localStorage.removeItem('gs_ai_chat');loadAIChat();}
-function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function sendAI(){
- const input=document.getElementById('aiInput'),btn=document.getElementById('aiSendBtn'); if(!input||!input.value.trim())return;
- const prompt=input.value.trim();input.value='';const cfg=getAIConfig();const msgs=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');msgs.push({role:'user',content:prompt});saveAIChat(msgs);loadAIChat();btn.disabled=true;btn.innerText='Memproses...';
- try{
-   const r=await fetch('/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:cfg.provider,model:cfg.model,prompt,messages:msgs.slice(-10),context:getSchoolContext()})});
-   const d=await r.json();if(!r.ok)throw new Error(d.error||'Gagal menghubungi backend AI');
-   const latest=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');latest.push({role:'assistant',content:d.answer||'AI tidak menghasilkan jawaban.'});saveAIChat(latest);loadAIChat();
- }catch(err){showToast(err.message,'error');const latest=JSON.parse(localStorage.getItem('gs_ai_chat')||'[]');latest.push({role:'assistant',content:'Terjadi kesalahan: '+err.message});saveAIChat(latest);loadAIChat();}
- finally{btn.disabled=false;btn.innerText='Kirim ke AI';}
+
+function getAIContext() {
+    const keys = ['school_profile','teachers','students','classes','subjects','schedules','attendance','grades','assignments','materi','keuangan','announcements'];
+    const context = {};
+    for (const key of keys) context[key] = DB.get(key);
+    return context;
+}
+
+function aiStorageKey(){ return 'gs_ai_chat_history'; }
+function getAIHistory(){ try{return JSON.parse(localStorage.getItem(aiStorageKey())||'[]')}catch{return []} }
+function saveAIHistory(h){ localStorage.setItem(aiStorageKey(), JSON.stringify(h.slice(-30))); }
+function escapeAI(s){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function renderAIHistory(){
+    const box=document.getElementById('aiMessages'); if(!box) return;
+    const h=getAIHistory();
+    if(!h.length){ box.innerHTML='<div class="text-center text-slate-400 py-16">Belum ada percakapan. Silakan mulai bertanya kepada Asisten Guru AI.</div>'; return; }
+    box.innerHTML=h.map(m=>`<div class="flex ${m.role==='user'?'justify-end':'justify-start'}"><div class="max-w-[90%] px-4 py-3 rounded-2xl ${m.role==='user'?'bg-blue-600 text-white':'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100'}"><div class="text-[10px] opacity-70 mb-1">${m.role==='user'?'Anda':'Asisten Guru AI'}</div><div class="whitespace-pre-wrap text-sm leading-6">${escapeAI(m.content)}</div></div></div>`).join('');
+    box.scrollTop=box.scrollHeight;
+}
+function loadAIChat(){ renderAIHistory(); const inp=document.getElementById('aiInput'); if(inp) inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAIMessage();}}); }
+function clearAIChat(){ if(confirm('Hapus seluruh percakapan AI?')){localStorage.removeItem(aiStorageKey());renderAIHistory();} }
+function setAIPrompt(text){ const x=document.getElementById('aiInput'); if(x){x.value=text;x.focus();} }
+async function checkAIHealth(){
+    const el=document.getElementById('aiStatus'); if(!el) return;
+    try{const r=await fetch('/api/ai/health'); const j=await r.json(); el.innerText=j.ready?'AI Terhubung':'AI Belum Siap'; el.className='px-3 py-2 rounded-lg text-sm '+(j.ready?'bg-green-500/25 text-green-50':'bg-amber-500/25 text-amber-50');}
+    catch{el.innerText='Server AI Tidak Terhubung';el.className='px-3 py-2 rounded-lg text-sm bg-red-500/25 text-red-50';}
+}
+async function sendAIMessage(){
+    const input=document.getElementById('aiInput'); if(!input) return; const message=input.value.trim(); if(!message)return;
+    const history=getAIHistory(); history.push({role:'user',content:message}); saveAIHistory(history); renderAIHistory(); input.value='';
+    showToast('Sedang menyiapkan jawaban AI...','info');
+    try{
+        const r=await fetch('/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,history:history.slice(-12),context:getAIContext()})});
+        const j=await r.json(); if(!r.ok) throw new Error(j.error||'Gagal menghubungi AI');
+        const h=getAIHistory(); h.push({role:'assistant',content:j.text||'AI tidak menghasilkan jawaban.'}); saveAIHistory(h); renderAIHistory(); showToast('Jawaban AI selesai.','success');
+    }catch(e){ const h=getAIHistory(); h.push({role:'assistant',content:'Maaf, AI belum dapat menjawab. '+e.message}); saveAIHistory(h); renderAIHistory(); showToast(e.message,'error'); }
 }
 
 // --- SETTINGS ---
 function renderSettings() {
-    const profile = DB.get('school_profile')[0] || {};
+    const profile = DB.get('school_profile') || {};
     document.getElementById('content').innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm">
@@ -1398,7 +1377,7 @@ function renderSettings() {
             name: pName.value, address: pAddress.value, principal: pPrincipal.value,
             year: pYear.value, semester: pSemester.value
         };
-        DB.set('school_profile', [data]);
+        DB.set('school_profile', data);
         showToast('Profil sekolah disimpan!', 'success');
     };
 }
@@ -1406,25 +1385,16 @@ function renderSettings() {
 // =================================================================
 // 7. CORE UTILS (CRUD, Import/Export)
 // =================================================================
-function saveData(key, data, id) {
+async function saveData(key, data, id) {
+    if (key === 'school_profile') { if(await DB.set(key,data)) showToast('Data berhasil disimpan!','success'); return; }
     let items = DB.get(key);
-    if (id) {
-        items = items.map(item => item.id === id ? data : item);
-    } else {
-        items.push(data);
-    }
-    DB.set(key, items);
-    showToast('Data berhasil disimpan!', 'success');
+    if (id) items = items.map(item => item.id === id ? data : item); else items.push(data);
+    if(await DB.set(key,items)) showToast('Data berhasil disimpan!','success');
 }
-
-function deleteData(key, id, callback) {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-        let items = DB.get(key);
-        items = items.filter(item => item.id !== id);
-        DB.set(key, items);
-        showToast('Data dihapus!', 'success');
-        callback();
-    }
+async function deleteData(key, id, callback) {
+    if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+    const items=DB.get(key).filter(item=>item.id!==id);
+    if(await DB.set(key,items)){showToast('Data dihapus!','success'); if(callback)callback();}
 }
 
 function filterTable(searchId, tbodyId) {
@@ -1447,33 +1417,22 @@ function exportCSV() {
     a.href = url; a.download = 'Data_Siswa.csv'; a.click();
 }
 
-function exportJSON() {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('gs_')) data[key] = JSON.parse(localStorage.getItem(key));
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'Backup_GuruSmart.json'; a.click();
+async function exportJSON() {
+    try {
+        const r=await fetch('/api/backup',{credentials:'same-origin'}); const j=await r.json();
+        if(!r.ok) throw new Error(j.error||'Backup gagal');
+        const blob=new Blob([JSON.stringify(j,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='Backup_GuruSmart.json'; a.click(); URL.revokeObjectURL(url);
+    } catch(e){showToast(e.message,'error');}
 }
-
-function importJSON(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const data = JSON.parse(event.target.result);
-            Object.keys(data).forEach(key => localStorage.setItem(key, JSON.stringify(data[key])));
-            showToast('Data berhasil diimport!', 'success');
-            setTimeout(() => location.reload(), 1000);
-        } catch (err) {
-            showToast('Format file salah!', 'error');
-        }
-    };
-    reader.readAsText(file);
+async function importJSON(e) {
+    const file=e.target.files[0]; if(!file)return;
+    try {
+        const data=JSON.parse(await file.text());
+        const r=await fetch('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});
+        const j=await r.json(); if(!r.ok) throw new Error(j.error||'Import gagal');
+        await syncFromServer(); showToast('Data berhasil dipulihkan ke server.','success'); setTimeout(()=>location.reload(),700);
+    } catch(err){showToast(err.message||'Format backup tidak valid.','error');} finally {e.target.value='';}
 }
 
 // =================================================================
@@ -1484,46 +1443,24 @@ document.getElementById('seedDataBtn').addEventListener('click', seedData);
 function initApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
-    document.getElementById('userName').innerText = currentUser.name;
-    document.getElementById('userRole').innerText = currentUser.role;
-    document.getElementById('userAvatar').innerText = currentUser.name.charAt(0);
-    navigate('dashboard');
+    document.getElementById('userName').innerText = currentUser?.name || 'Pengguna';
+    document.getElementById('userRole').innerText = currentUser?.role || 'guru';
+    document.getElementById('userAvatar').innerText = (currentUser?.name || 'G').charAt(0).toUpperCase();
+    try { navigate('dashboard'); } catch (err) {
+        document.getElementById('content').innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow"><h2 class="text-xl font-bold mb-2">GURU SMART berhasil masuk</h2><p class="text-slate-600 dark:text-slate-300">Dashboard sedang dimuat. Silakan pilih menu di sebelah kiri.</p></div>`;
+        console.error(err);
+    }
 }
 
-window.onload = () => {
-    if (checkSession()) {
-        initApp();
-    }
-};
-</script>
+window.onload = async () => { if (await checkSession()) { await syncFromServer(); initApp(); } };
+window.addEventListener('error', (e) => {
+    console.error('GURU SMART error:', e.error || e.message);
+    try { if (currentUser) showToast('Aplikasi berhasil masuk, tetapi ada komponen yang gagal dimuat.', 'error'); } catch {}
+});
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('GURU SMART promise error:', e.reason);
+});
 
-<!-- GURU SMART AI SERVER CONNECTOR -->
-<style>
-#aiFab{position:fixed;right:22px;bottom:22px;z-index:9999;background:#2563eb;color:#fff;border:0;border-radius:999px;padding:14px 18px;font-weight:700;box-shadow:0 10px 25px #0002;cursor:pointer}
-#aiPanel{position:fixed;right:22px;bottom:82px;width:min(420px,calc(100vw - 32px));height:600px;z-index:9998;background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 20px 50px #0003;display:none;overflow:hidden;font-family:Inter,system-ui,sans-serif}
-#aiHead{background:#2563eb;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
-#aiMessages{height:430px;overflow:auto;padding:14px;background:#f8fafc}
-.aiMsg{max-width:88%;padding:10px 12px;border-radius:12px;margin:8px 0;white-space:pre-wrap;line-height:1.45;font-size:14px}
-.aiUser{margin-left:auto;background:#dbeafe}.aiBot{background:#fff;border:1px solid #e5e7eb}
-#aiForm{padding:12px;border-top:1px solid #e5e7eb;display:flex;gap:8px}#aiInput{flex:1;min-height:70px;resize:none;border:1px solid #d1d5db;border-radius:10px;padding:10px}#aiSend{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:0 14px;font-weight:700;cursor:pointer}
-</style>
-<button id="aiFab" type="button" onclick="toggleGuruSmartAI()">🤖 Asisten AI</button>
-<div id="aiPanel">
-  <div id="aiHead"><strong>🤖 Asisten AI Guru</strong><button type="button" onclick="toggleGuruSmartAI()" style="background:none;border:0;color:#fff;font-size:20px;cursor:pointer">×</button></div>
-  <div id="aiMessages"><div class="aiMsg aiBot">Halo! Saya Asisten AI Guru. Tanyakan apa saja tentang modul ajar, RPP, LKPD, soal, analisis nilai, atau administrasi guru.</div></div>
-  <form id="aiForm"><textarea id="aiInput" placeholder="Contoh: Buatkan modul ajar Matematika kelas 5 tentang pecahan..."></textarea><button id="aiSend" type="submit">Kirim</button></form>
-</div>
-<script>
-(function(){
-  const panel=document.getElementById('aiPanel'), msgs=document.getElementById('aiMessages'), input=document.getElementById('aiInput'), form=document.getElementById('aiForm'), send=document.getElementById('aiSend');
-  window.toggleGuruSmartAI=function(){panel.style.display=panel.style.display==='none'||!panel.style.display?'block':'none'; if(panel.style.display==='block') input.focus();};
-  function add(text,cls){const d=document.createElement('div');d.className='aiMsg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
-  form.addEventListener('submit',async e=>{e.preventDefault();const q=input.value.trim();if(!q)return;add(q,'aiUser');input.value='';send.disabled=true;send.textContent='...';const wait=add('AI sedang berpikir...','aiBot');
-    try{const r=await fetch('/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})});const data=await r.json();wait.remove();if(!r.ok)throw new Error(data.error||'Server AI error');add(data.text||'AI tidak mengembalikan jawaban.','aiBot');}
-    catch(err){wait.textContent='Gagal: '+err.message;}
-    finally{send.disabled=false;send.textContent='Kirim';input.focus();}
-  });
-})();
 </script>
 </body>
 </html>
